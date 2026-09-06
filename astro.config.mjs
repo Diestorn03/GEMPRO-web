@@ -11,7 +11,7 @@ import tailwindcss from '@tailwindcss/vite';
 const isGithubPages = process.env.GITHUB_PAGES === 'true';
 
 export default defineConfig({
-  site: isGithubPages ? 'https://REEMPLAZAR-usuario.github.io' : 'https://gempro.com.ve',
+  site: isGithubPages ? 'https://diestorn03.github.io' : 'https://gempro.com.ve',
   base: isGithubPages ? '/GEMPRO-web' : '/',
   output: 'static',
   adapter: node({ mode: 'middleware' }),
