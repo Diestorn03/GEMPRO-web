@@ -1,0 +1,95 @@
+---
+import { Image } from 'astro:assets';
+import logoBlanco from '../assets/logos/logo-gempro-blanco.png';
+import { nav, site, withBase } from '../data/site';
+
+interface Props { transparent?: boolean }
+const { transparent = true } = Astro.props;
+---
+<header
+  data-nav
+  class:list={[
+    'fixed inset-x-0 top-0 z-50 transition-[transform,background-color,box-shadow,backdrop-filter] duration-500',
+    transparent ? 'bg-transparent' : 'bg-ink/90 backdrop-blur-md shadow-[0_1px_0_rgba(255,255,255,.08)]',
+  ]}
+>
+  <div class="absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 bg-neon" data-progress aria-hidden="true"></div>
+  <div class="container-x flex h-[76px] items-center justify-between lg:h-[96px]">
+    <a href={withBase('/')} class="flex items-center" aria-label="GEMPRO, inicio">
+      <Image src={logoBlanco} alt="GEMPRO" height={52} width={203} class="h-10 w-auto lg:h-[52px]" loading="eager" />
+    </a>
+
+    <nav aria-label="Principal" class="hidden items-center gap-9 lg:flex">
+      {nav.map((item) => (
+        <a href={item.href} class="text-[13px] font-semibold uppercase tracking-[0.14em] text-white/90 transition-colors hover:text-neon">{item.label}</a>
+      ))}
+      <a href={withBase('/#contacto')} class="rounded-[3px] bg-green px-6 py-3.5 text-[13px] font-extrabold uppercase tracking-[0.1em] text-ink transition-[background-color] duration-300 hover:bg-neon" data-magnetic>Solicitar diagnóstico</a>
+    </nav>
+
+    <button
+      type="button"
+      class="menu-toggle relative z-[60] flex h-11 w-11 items-center justify-center rounded-[3px] border border-white/20 text-white lg:hidden"
+      aria-controls="menu-movil"
+      aria-expanded="false"
+      aria-label="Abrir menú"
+    >
+      <svg class="icon-open" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+      <svg class="icon-close hidden" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+    </button>
+  </div>
+
+  <div id="menu-movil" class="menu-panel fixed inset-0 z-[55] hidden flex-col bg-ink/95 px-6 pt-28 pb-10 backdrop-blur-lg lg:hidden" data-lenis-prevent>
+    <nav aria-label="Menú móvil" class="flex flex-col gap-2">
+      {nav.map((item, i) => (
+        <a href={item.href} class="menu-link display border-b border-white/10 py-4 text-[40px] leading-none text-white" style={`--i:${i}`}>{item.label}</a>
+      ))}
+      <a href={withBase('/#contacto')} class="menu-link display border-b border-white/10 py-4 text-[40px] leading-none text-neon" style="--i:4">Contacto</a>
+    </nav>
+    <div class="mt-auto flex flex-col gap-3 pt-8">
+      <a href={`https://wa.me/${site.whatsapp}`} target="_blank" rel="noopener" class="btn-primary">WhatsApp {site.whatsappDisplay}</a>
+      <p class="font-mono text-[11px] tracking-[0.12em] text-mist">{site.addressShort.toUpperCase()}</p>
+    </div>
+  </div>
+</header>
+
+<style>
+  [data-nav].is-scrolled { background-color: rgba(6, 20, 38, 0.86); backdrop-filter: blur(14px); box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08); }
+  [data-nav].is-hidden:not(.menu-open) { transform: translateY(-100%); }
+  [data-nav].menu-open { transform: none; background-color: transparent; }
+  .menu-panel.is-open { display: flex; }
+  .menu-panel.is-open .menu-link { animation: menu-in 0.6s var(--ease-out-expo) both; animation-delay: calc(var(--i) * 70ms + 60ms); }
+  @keyframes menu-in { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .menu-panel.is-open .menu-link { animation: none; } }
+</style>
+
+<script>
+  function setupMenu() {
+    const header = document.querySelector<HTMLElement>('[data-nav]');
+    const btn = header?.querySelector<HTMLButtonElement>('.menu-toggle');
+    const panel = header?.querySelector<HTMLElement>('.menu-panel');
+    if (!header || !btn || !panel) return;
+    const open = () => {
+      panel.classList.add('is-open');
+      header.classList.add('menu-open');
+      btn.setAttribute('aria-expanded', 'true');
+      btn.setAttribute('aria-label', 'Cerrar menú');
+      btn.querySelector('.icon-open')?.classList.add('hidden');
+      btn.querySelector('.icon-close')?.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    };
+    const close = () => {
+      panel.classList.remove('is-open');
+      header.classList.remove('menu-open');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.setAttribute('aria-label', 'Abrir menú');
+      btn.querySelector('.icon-open')?.classList.remove('hidden');
+      btn.querySelector('.icon-close')?.classList.add('hidden');
+      document.body.style.overflow = '';
+    };
+    btn.addEventListener('click', () => (panel.classList.contains('is-open') ? close() : open()));
+    panel.querySelectorAll('a').forEach((a) => a.addEventListener('click', close));
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+    document.addEventListener('astro:before-swap', close, { once: true });
+  }
+  document.addEventListener('astro:page-load', setupMenu);
+</script>

@@ -1,0 +1,67 @@
+---
+import { Picture } from 'astro:assets';
+import { services } from '../data/site';
+import fotoPredictivo from '../assets/img/servicio-predictivo.jpg';
+import fotoProactivo from '../assets/img/servicio-proactivo.jpg';
+import fotoPreventivo from '../assets/img/servicio-preventivo.jpg';
+import fotoCorrectivo from '../assets/img/servicio-correctivo.jpg';
+
+const photos: Record<string, ImageMetadata> = {
+  predictivo: fotoPredictivo,
+  proactivo: fotoProactivo,
+  preventivo: fotoPreventivo,
+  correctivo: fotoCorrectivo,
+};
+const [lead, ...rest] = services;
+---
+<section id="servicios" class="container-x flex flex-col gap-10 py-20 lg:gap-14 lg:py-[120px]">
+  <div class="grid gap-6 lg:grid-cols-[1.3fr_.7fr] lg:items-end lg:gap-16">
+    <div class="flex flex-col gap-4">
+      <span class="eyebrow" data-reveal="fade">Qué hacemos</span>
+      <h2 class="display text-[clamp(38px,5.4vw,60px)] text-white" data-split>Cuatro maneras de que la planta <span class="text-neon">no pare.</span></h2>
+    </div>
+    <p class="text-[17px] leading-relaxed text-mist lg:pb-1 lg:text-[18px]" data-reveal data-delay="0.2">Anticipar la falla, medirla, programar la intervención y repararla. En sitio o en nuestro taller.</p>
+  </div>
+
+  <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 lg:[grid-auto-rows:310px]" data-reveal-group data-stagger="0.12">
+    <a href={lead.href} class="photo-tile group flex min-h-[380px] flex-col justify-end md:col-span-2 lg:col-span-1 lg:row-span-2 lg:min-h-0">
+      <Picture src={photos[lead.id]} alt="" formats={['avif', 'webp']} widths={[480, 720, 960]} sizes="(min-width: 1024px) 33vw, 100vw" loading="lazy" pictureAttributes={{ class: 'contents' }} />
+      <div class="tile-content flex h-full flex-col justify-between p-6 lg:p-7">
+        <div class="flex items-start justify-between">
+          <span class="eyebrow">{lead.code} · {lead.label}</span>
+          <span class="flex h-11 w-11 items-center justify-center rounded-full border border-white/40 transition-[background-color,transform] duration-500 group-hover:bg-neon group-hover:text-ink group-hover:rotate-45" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M8 7h9v9"/></svg>
+          </span>
+        </div>
+        <div class="flex flex-col gap-3">
+          <span class="display text-[34px] text-white lg:text-[44px]">{lead.title}</span>
+          <span class="max-w-[420px] text-[15px] leading-relaxed text-fog lg:text-[16px]">{lead.text}</span>
+        </div>
+      </div>
+    </a>
+
+    {rest.map((s) => (
+      <a href={s.href} class="photo-tile group flex min-h-[260px] flex-col justify-end lg:min-h-0">
+        <Picture src={photos[s.id]} alt="" formats={['avif', 'webp']} widths={[480, 720, 960]} sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw" loading="lazy" pictureAttributes={{ class: 'contents' }} />
+        <div class="tile-content flex h-full flex-col justify-between p-6">
+          <span class="eyebrow">{s.code} · {s.label}</span>
+          <div class="flex flex-col gap-2">
+            <span class="display text-[28px] text-white lg:text-[30px]">{s.title}</span>
+            <span class="text-[14.5px] leading-snug text-fog">{s.text}</span>
+          </div>
+        </div>
+      </a>
+    ))}
+
+    <a href="#adiestramiento" class="group relative flex min-h-[220px] flex-col justify-between overflow-hidden rounded-md bg-green p-6 transition-colors duration-500 hover:bg-neon lg:min-h-0">
+      <span class="eyebrow text-ink">Adiestramiento</span>
+      <svg class="absolute right-5 top-5 w-[180px] opacity-60 transition-transform duration-700 group-hover:translate-x-1" viewBox="0 0 200 60" fill="none" aria-hidden="true">
+        <path d="M0,40 L20,38 L30,34 L36,10 L42,36 L56,38 L70,30 L76,18 L82,34 L100,38 L120,36 L128,26 L134,36 L160,38 L180,36 L200,37" stroke="#061426" stroke-width="2" stroke-linejoin="round" />
+      </svg>
+      <div class="flex flex-col gap-2">
+        <span class="display text-[28px] text-ink lg:text-[30px]">Formar a su gente</span>
+        <span class="text-[14.5px] leading-snug text-panel">Cursos de vibraciones, termografía, tribología y ultrasonido, niveles I a III.</span>
+      </div>
+    </a>
+  </div>
+</section>

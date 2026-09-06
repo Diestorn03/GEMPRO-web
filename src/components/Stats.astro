@@ -1,0 +1,17 @@
+---
+import { stats } from '../data/site';
+---
+<section id="cifras" aria-label="GEMPRO en cifras" class="bg-green py-14 lg:py-[88px]">
+  <div class="container-x grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4 lg:gap-8" data-reveal-group data-stagger="0.1">
+    {stats.map((s) => (
+      <div class="flex flex-col gap-2 border-l-2 border-ink/25 pl-4 lg:pl-6">
+        {'raw' in s ? (
+          <span class="display text-[64px] leading-[.9] text-ink lg:text-[120px]">{s.raw}</span>
+        ) : (
+          <span class="display text-[64px] leading-[.9] text-ink tabular-nums lg:text-[120px]" data-count={s.value} data-prefix={s.prefix ?? ''}>{s.prefix ?? ''}{s.value}</span>
+        )}
+        <span class="text-[13px] font-semibold leading-snug text-panel lg:text-[16px]">{s.label}</span>
+      </div>
+    ))}
+  </div>
+</section>

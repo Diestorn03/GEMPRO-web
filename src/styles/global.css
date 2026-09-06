@@ -1,0 +1,151 @@
+@import "tailwindcss";
+@import "@fontsource-variable/archivo/wdth.css";
+@import "@fontsource-variable/jetbrains-mono";
+
+/* ---------- Tokens de marca (mismos colores del sitio actual + tintas para fondo oscuro) ---------- */
+@theme {
+  --color-ink: #061426;      /* fondo profundo */
+  --color-panel: #0b2646;    /* paneles */
+  --color-navy: #103661;     /* azul marino de marca */
+  --color-blue: #154984;     /* azul primario del sitio actual */
+  --color-green: #28af60;    /* verde de marca */
+  --color-neon: #3ddc84;     /* verde claro para texto sobre fondo oscuro */
+  --color-amber: #ffb454;    /* alerta (HUD) */
+  --color-fog: #c5d2e3;      /* texto secundario sobre oscuro */
+  --color-mist: #8fa3bd;     /* texto terciario sobre oscuro */
+  --color-paper: #ffffff;
+  --color-line: #e0e5eb;
+  --color-slate: #4a586c;    /* texto secundario sobre claro */
+  --color-graphite: #1b2532; /* texto principal sobre claro */
+
+  --font-sans: "Archivo Variable", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono Variable", Consolas, "Courier New", monospace;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* ---------- Base ---------- */
+html {
+  scroll-behavior: auto; /* Lenis se encarga del desplazamiento suave */
+  -webkit-text-size-adjust: 100%;
+}
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
+
+body {
+  @apply bg-ink text-white font-sans antialiased;
+  font-variation-settings: "wdth" 100;
+  overflow-x: clip;
+}
+::selection { background: var(--color-neon); color: var(--color-ink); }
+
+:focus-visible { outline: 2px solid var(--color-neon); outline-offset: 3px; border-radius: 2px; }
+
+/* ---------- Utilidades tipográficas ---------- */
+@utility display {
+  font-family: var(--font-sans);
+  font-variation-settings: "wdth" 125, "wght" 900;
+  font-weight: 900;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  line-height: 0.92;
+  text-wrap: balance;
+}
+@utility display-condensed {
+  font-family: var(--font-sans);
+  font-variation-settings: "wdth" 62, "wght" 800;
+  font-weight: 800;
+  font-stretch: 62%;
+  text-transform: uppercase;
+  line-height: 0.86;
+  text-wrap: balance;
+}
+@utility eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-neon);
+}
+@utility btn-primary {
+  @apply inline-flex items-center justify-center gap-3 rounded-[3px] bg-green px-8 py-5 text-[15px] font-extrabold uppercase tracking-[0.06em] text-ink transition-[transform,box-shadow,background-color] duration-300;
+  &:hover { background-color: var(--color-neon); transform: translateY(-2px); box-shadow: 0 14px 34px -12px rgba(61, 220, 132, 0.6); }
+  &:active { transform: translateY(0); }
+}
+@utility btn-ghost {
+  @apply inline-flex items-center justify-center gap-3 rounded-[3px] border border-white/35 px-7 py-5 text-[15px] font-semibold uppercase tracking-[0.06em] text-white transition-[border-color,background-color,transform] duration-300;
+  &:hover { border-color: var(--color-neon); background-color: rgba(61, 220, 132, 0.08); transform: translateY(-2px); }
+}
+@utility container-x {
+  @apply mx-auto w-full max-w-[1440px] px-5 sm:px-8 lg:px-[72px];
+}
+
+/* ---------- Sistema de animaciones (GSAP toma el control cuando hay JS) ---------- */
+/* Los elementos con data-reveal nacen invisibles solo si JS está activo; sin JS todo se ve. */
+html.js:not(.motion-ready) [data-reveal],
+html.js:not(.motion-ready) [data-reveal-group] > * {
+  opacity: 0;
+}
+html.js:not(.motion-ready) [data-split] { visibility: hidden; }
+@media (prefers-reduced-motion: reduce) {
+  html.js [data-reveal], html.js [data-reveal-group] > * { opacity: 1 !important; transform: none !important; }
+  html.js [data-split] { visibility: visible !important; }
+  .marquee-track { animation: none !important; }
+}
+.split-line { display: block; }
+
+/* Cinta continua */
+@keyframes marquee { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
+.marquee-track { display: flex; width: max-content; animation: marquee var(--marquee-duration, 34s) linear infinite; will-change: transform; }
+.marquee:hover .marquee-track { animation-play-state: paused; }
+
+/* Punto "en vivo" */
+@keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(61, 220, 132, 0.7); } 70% { box-shadow: 0 0 0 12px rgba(61, 220, 132, 0); } 100% { box-shadow: 0 0 0 0 rgba(61, 220, 132, 0); } }
+.live-dot { width: 10px; height: 10px; border-radius: 9999px; background: var(--color-neon); animation: pulse-ring 1.8s ease-out infinite; }
+
+/* Rejilla sutil sobre fondos oscuros */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Tarjetas con foto */
+.photo-tile { position: relative; overflow: hidden; border-radius: 6px; background: var(--color-panel); isolation: isolate; }
+.photo-tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 1.1s var(--ease-out-expo); }
+.photo-tile::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(6, 20, 38, 0.8) 0%, rgba(6, 20, 38, 0.15) 40%, rgba(6, 20, 38, 0.94) 100%); z-index: 1; transition: opacity 0.6s; }
+.photo-tile > .tile-content { position: relative; z-index: 2; }
+.photo-tile:hover img, .photo-tile:focus-within img { transform: scale(1.06); }
+
+/* Números en trazo: se rellenan al pasar el cursor */
+.outline-text { color: transparent; -webkit-text-stroke: 2px var(--color-neon); transition: color 0.5s var(--ease-out-quart), transform 0.6s var(--ease-out-expo); }
+li:hover > .outline-text { color: var(--color-neon); transform: translateY(-6px); }
+
+/* Botones magnéticos (JS mueve el elemento hacia el cursor) */
+[data-magnetic] { will-change: transform; }
+
+/* Línea que fluye (proceso) */
+@keyframes flow { to { stroke-dashoffset: -60; } }
+.flow-line { stroke-dasharray: 8 12; animation: flow 2s linear infinite; }
+
+/* Filas de presencia */
+.presence-row { transition: color 0.35s, padding-left 0.35s var(--ease-out-quart); }
+.presence-row:hover, .presence-row:focus-visible { color: var(--color-green); padding-left: 12px; }
+.presence-row .arrow { transition: transform 0.4s var(--ease-out-quart); }
+.presence-row:hover .arrow { transform: translateX(10px); }
+
+/* Campos del formulario */
+.field {
+  @apply w-full rounded-[4px] border border-white/20 bg-white/[0.04] px-4 py-3.5 text-[15px] text-white placeholder:text-mist transition-[border-color,box-shadow] duration-300;
+}
+.field:focus { outline: none; border-color: var(--color-neon); box-shadow: 0 0 0 3px rgba(61, 220, 132, 0.18); }
+.field[aria-invalid="true"] { border-color: var(--color-amber); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+}

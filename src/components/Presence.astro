@@ -1,0 +1,25 @@
+---
+import { presence } from '../data/site';
+---
+<section id="presencia" class="bg-paper py-20 text-navy lg:py-[110px]">
+  <div class="container-x flex flex-col gap-8 lg:gap-9">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <span class="eyebrow text-green" data-reveal="fade">Presencia</span>
+      <span class="font-mono text-[12px] tracking-[0.1em] text-slate lg:text-[13px]" data-reveal="fade" data-delay="0.2">SEDE PRINCIPAL · URB. URDANETA, MARACAIBO</span>
+    </div>
+    <ul class="border-t-2 border-navy" data-reveal-group data-stagger="0.1">
+      {presence.map((p) => (
+        <li class="border-b border-line">
+          <a href={`tel:${p.tel}`} class="presence-row grid items-center gap-3 py-5 sm:grid-cols-[1fr_auto_44px] sm:gap-6 lg:py-6" aria-label={`${p.country}, ${p.city}, llamar al ${p.phone}`}>
+            <span class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+              <span class="display text-[38px] leading-[.9] sm:text-[52px] lg:text-[76px]">{p.country}</span>
+              <span class="display-condensed text-[20px] font-medium normal-case text-slate lg:text-[30px]">{p.city}</span>
+            </span>
+            <span class="font-mono text-[14px] text-graphite lg:text-[15px]">{p.phone}</span>
+            <svg class="arrow hidden sm:block" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>

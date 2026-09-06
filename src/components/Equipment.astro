@@ -1,0 +1,50 @@
+---
+import { Image, Picture } from 'astro:assets';
+import { equipment, brands } from '../data/site';
+import prodVibracion from '../assets/img/producto-analizador-vibracion.jpg';
+import prodTermografia from '../assets/img/producto-termografia.jpg';
+import prodLaser from '../assets/img/producto-alineacion-laser.jpg';
+import prodUltrasonido from '../assets/img/producto-ultrasonido.jpg';
+import logoEasylaser from '../assets/logos/logo-easylaser.png';
+import logoSemapi from '../assets/logos/logo-semapi.png';
+import logoHikmicro from '../assets/logos/logo-hikmicro.png';
+import logoJpbalancer from '../assets/logos/logo-jpbalancer.png';
+
+const photos: Record<string, ImageMetadata> = { vibracion: prodVibracion, termografia: prodTermografia, laser: prodLaser, ultrasonido: prodUltrasonido };
+const logos: Record<string, { img: ImageMetadata; h: string }> = {
+  easylaser: { img: logoEasylaser, h: 'h-[22px]' },
+  semapi: { img: logoSemapi, h: 'h-[26px]' },
+  hikmicro: { img: logoHikmicro, h: 'h-[18px]' },
+  jpbalancer: { img: logoJpbalancer, h: 'h-[30px]' },
+};
+---
+<section id="equipos" class="container-x flex flex-col gap-10 py-20 lg:gap-12 lg:py-[120px]">
+  <div class="flex flex-col gap-7">
+    <div class="flex flex-col gap-4">
+      <span class="eyebrow" data-reveal="fade">Equipos</span>
+      <h2 class="display max-w-[1100px] text-[clamp(36px,5.2vw,60px)] text-white" data-split>Medimos con ellos. Y los vendemos.</h2>
+    </div>
+    <ul class="flex flex-wrap items-center gap-3" data-reveal-group data-stagger="0.08" aria-label="Marcas representadas">
+      {brands.map((b) => (
+        <li class="flex items-center rounded bg-white px-4 py-2.5">
+          <Image src={logos[b.id].img} alt={b.name} height={30} class={`${logos[b.id].h} w-auto`} loading="lazy" />
+        </li>
+      ))}
+    </ul>
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" data-reveal-group data-stagger="0.1">
+    {equipment.map((e) => (
+      <article class="group flex flex-col overflow-hidden rounded-md border border-white/10 bg-panel transition-[border-color,transform] duration-500 hover:-translate-y-1.5 hover:border-neon/50">
+        <div class="h-[180px] overflow-hidden">
+          <Picture src={photos[e.id]} alt={e.title} formats={['avif', 'webp']} widths={[400, 640, 900]} sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw" class="h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-105" loading="lazy" pictureAttributes={{ class: 'contents' }} />
+        </div>
+        <div class="flex flex-col gap-2 p-5">
+          <span class="font-mono text-[11px] uppercase tracking-[0.14em] text-neon">{e.tag}</span>
+          <h3 class="display text-[22px] text-white">{e.title}</h3>
+          <p class="text-[14px] leading-relaxed text-mist">{e.text}</p>
+        </div>
+      </article>
+    ))}
+  </div>
+</section>

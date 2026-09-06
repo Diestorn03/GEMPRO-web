@@ -1,0 +1,54 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import Contact from '../components/Contact.astro';
+import { serviceDetail } from '../data/site';
+import fotoServicios from '../assets/img/hero-servicios.jpg';
+---
+<Base title="Servicios" description="Mantenimiento predictivo, proactivo, preventivo y correctivo: análisis de vibraciones, termografía, alineación láser, balanceo dinámico, mecanizado en sitio y más. GEMPRO, Maracaibo.">
+  <section class="relative isolate overflow-hidden bg-ink pb-16 pt-36 lg:pb-20 lg:pt-52" data-parallax-scope>
+    <div class="absolute inset-0 -z-20" data-parallax="12">
+      <Image src={fotoServicios} alt="" widths={[768, 1280, 1920]} sizes="100vw" class="h-full w-full object-cover" loading="eager" />
+    </div>
+    <div class="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(6,20,38,.96)_0%,rgba(6,20,38,.8)_55%,rgba(6,20,38,.5)_100%)]" aria-hidden="true"></div>
+    <div class="container-x flex flex-col gap-4">
+      <span class="eyebrow" data-reveal="fade">Servicios</span>
+      <h1 class="display max-w-[980px] text-[clamp(40px,7vw,84px)] text-white" data-split>Del síntoma a la reparación, con el mismo equipo.</h1>
+      <p class="max-w-[640px] text-[17px] leading-relaxed text-fog lg:text-[19px]" data-reveal data-delay="0.3">Cada eje se contrata por separado o como programa anual de confiabilidad para la planta.</p>
+    </div>
+  </section>
+
+  <nav aria-label="Ejes de servicio" class="border-b border-white/10 bg-ink">
+    <div class="container-x flex gap-6 overflow-x-auto lg:gap-10">
+      {serviceDetail.map((s) => (
+        <a href={`#${s.id}`} class="whitespace-nowrap border-b-2 border-transparent py-4 text-[13px] font-bold uppercase tracking-[0.1em] text-fog transition-colors hover:border-neon hover:text-white">{s.label}</a>
+      ))}
+    </div>
+  </nav>
+
+  {serviceDetail.map((s, i) => (
+    <section id={s.id} class:list={['scroll-mt-32 py-16 lg:py-24', i % 2 === 1 ? 'bg-panel' : 'bg-ink']}>
+      <div class="container-x grid gap-10 lg:grid-cols-[400px_1fr] lg:gap-[72px]">
+        <div class="flex flex-col gap-4">
+          <span class="eyebrow" data-reveal="fade">{s.label}</span>
+          <h2 class="display text-[clamp(32px,4vw,46px)] text-white" data-split>{s.title}</h2>
+          <p class="text-[16px] leading-relaxed text-mist" data-reveal data-delay="0.15">{s.text}</p>
+          <a href="#contacto" class="btn-primary mt-3 self-start px-6 py-4 text-[14px]" data-reveal data-delay="0.25">Solicitar este servicio</a>
+        </div>
+        <ul class="grid content-start gap-x-10 sm:grid-cols-2" data-reveal-group data-stagger="0.07">
+          {s.items.map(([name, detail]) => (
+            <li class="flex items-start gap-3 border-b border-white/10 py-3.5">
+              <span class="mt-2 h-2 w-2 shrink-0 bg-neon" aria-hidden="true"></span>
+              <div class="flex flex-col gap-0.5">
+                <span class="text-[16px] font-semibold text-white">{name}</span>
+                <span class="text-[14px] text-mist">{detail}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  ))}
+
+  <Contact />
+</Base>

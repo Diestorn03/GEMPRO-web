@@ -1,0 +1,30 @@
+---
+import { process } from '../data/site';
+---
+<section id="proceso" class="relative overflow-hidden bg-panel py-20 lg:py-[120px]">
+  <div class="grid-bg pointer-events-none absolute inset-0 opacity-60" aria-hidden="true"></div>
+  <div class="container-x relative flex flex-col gap-12 lg:gap-16">
+    <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
+      <div class="flex flex-col gap-4">
+        <span class="eyebrow" data-reveal="fade">Cómo trabajamos</span>
+        <h2 class="display max-w-[900px] text-[clamp(36px,5.2vw,64px)] text-white" data-split>Del síntoma al informe firmado</h2>
+      </div>
+      <span class="font-mono text-[12px] tracking-[0.1em] text-mist lg:text-[13px]" data-reveal="fade" data-delay="0.3">UN MISMO EQUIPO EN LAS CUATRO ETAPAS</span>
+    </div>
+
+    <div class="relative">
+      <svg class="absolute left-0 top-[138px] hidden w-full lg:block" height="2" viewBox="0 0 1296 2" preserveAspectRatio="none" aria-hidden="true">
+        <line class="flow-line" x1="0" y1="1" x2="1296" y2="1" stroke="#3ddc84" stroke-width="2" />
+      </svg>
+      <ol class="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8" data-reveal-group data-stagger="0.14">
+        {process.map((step) => (
+          <li class="flex flex-col gap-4">
+            <span class="display outline-text text-[96px] leading-none lg:text-[132px]" aria-hidden="true">{step.n}</span>
+            <h3 class="display text-[24px] text-white lg:text-[26px]"><span class="sr-only">Paso {step.n}: </span>{step.title}</h3>
+            <p class="text-[15.5px] leading-relaxed text-mist">{step.text}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </div>
+</section>

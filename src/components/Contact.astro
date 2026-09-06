@@ -1,0 +1,142 @@
+---
+import { Image } from 'astro:assets';
+import { contact, site } from '../data/site';
+import fotoContacto from '../assets/img/hero-slide-2.jpg';
+---
+<section id="contacto" class="relative isolate overflow-hidden py-20 lg:py-24" data-parallax-scope>
+  <div class="absolute inset-0 -z-20" data-parallax="10">
+    <Image src={fotoContacto} alt="" widths={[768, 1280, 1920]} sizes="100vw" class="h-full w-full object-cover" loading="lazy" />
+  </div>
+  <div class="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(6,20,38,.95)_0%,rgba(6,20,38,.84)_50%,rgba(6,20,38,.7)_100%)]" aria-hidden="true"></div>
+
+  <div class="container-x grid gap-12 lg:grid-cols-[1fr_520px] lg:items-center lg:gap-20">
+    <div class="flex flex-col gap-6">
+      <span class="eyebrow" data-reveal="fade">Contacto</span>
+      <h2 class="display text-[clamp(38px,6vw,72px)] text-white">
+        <span class="block" data-split>{contact.title[0]}</span>
+        <span class="block text-neon" data-split data-delay="0.15">{contact.title[1]}</span>
+      </h2>
+      <p class="max-w-[520px] text-[16px] leading-relaxed text-fog lg:text-[18px]" data-reveal data-delay="0.2">{contact.text}</p>
+      <a href={`https://wa.me/${site.whatsapp}`} target="_blank" rel="noopener" class="inline-flex items-center gap-3 self-start rounded-[3px] border border-neon px-5 py-4 text-[14px] font-bold uppercase tracking-[0.06em] text-white transition-[background-color,transform] duration-300 hover:bg-neon/10 hover:-translate-y-0.5" data-reveal data-delay="0.3">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3ddc84" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 1-13.3 7.9L3 21l1.1-4.7A9 9 0 1 1 21 12z"/></svg>
+        WhatsApp {site.whatsappDisplay}
+      </a>
+      <div class="flex flex-col gap-1 text-[14px] text-mist" data-reveal="fade" data-delay="0.4">
+        <a href={`mailto:${site.email}`} class="transition-colors hover:text-neon">{site.email}</a>
+        <span>[HORARIO DE ATENCIÓN] · Emergencias 24/7</span>
+      </div>
+    </div>
+
+    <form id="form-contacto" class="relative flex flex-col gap-3.5 rounded-lg border border-white/15 bg-white/[0.06] p-6 backdrop-blur-xl lg:p-8" data-reveal="right" data-delay="0.2" novalidate>
+      <div class="grid gap-3.5 sm:grid-cols-2">
+        <div class="flex flex-col gap-1.5">
+          <label for="nombre" class="text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Nombre</label>
+          <input id="nombre" name="nombre" type="text" autocomplete="name" required minlength="2" class="field" placeholder="Su nombre" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label for="empresa" class="text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Empresa</label>
+          <input id="empresa" name="empresa" type="text" autocomplete="organization" class="field" placeholder="Planta o empresa" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label for="correo" class="text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Correo</label>
+          <input id="correo" name="correo" type="email" autocomplete="email" required class="field" placeholder="nombre@empresa.com" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label for="telefono" class="text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Teléfono</label>
+          <input id="telefono" name="telefono" type="tel" autocomplete="tel" class="field" placeholder="+58" />
+        </div>
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label for="mensaje" class="text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Equipo y síntoma</label>
+        <textarea id="mensaje" name="mensaje" rows="4" required minlength="10" class="field resize-y" placeholder={contact.placeholder}></textarea>
+      </div>
+      <!-- Honeypot: oculto para personas -->
+      <div class="absolute -left-[9999px] top-0 h-px w-px overflow-hidden" aria-hidden="true">
+        <label>No rellenar <input type="text" name="empresa_web" tabindex="-1" autocomplete="off" /></label>
+      </div>
+      <p class="form-error hidden text-[13px] text-amber" role="alert"></p>
+      <button type="submit" class="btn-primary mt-1 h-[58px] w-full">
+        <span class="btn-label">Enviar consulta</span>
+        <span class="btn-loading hidden">Enviando…</span>
+      </button>
+      <p class="text-[12px] text-mist">Su consulta queda registrada.</p>
+
+      <div class="form-success absolute inset-0 hidden flex-col items-center justify-center gap-4 rounded-lg bg-ink/95 p-8 text-center" aria-live="polite">
+        <span class="flex h-16 w-16 items-center justify-center rounded-full bg-green text-ink">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
+        </span>
+        <span class="display text-[28px] text-white">Recibido</span>
+        <p class="max-w-[320px] text-[15px] text-fog">Un ingeniero le responderá con una propuesta de medición.</p>
+        <button type="button" class="form-reset mt-2 border-b border-neon pb-0.5 text-[13px] font-bold uppercase tracking-[0.08em] text-white">Enviar otra consulta</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<script>
+  import gsap from 'gsap';
+
+  function setupForm() {
+    const form = document.getElementById('form-contacto') as HTMLFormElement | null;
+    if (!form) return;
+    const errorEl = form.querySelector<HTMLElement>('.form-error')!;
+    const success = form.querySelector<HTMLElement>('.form-success')!;
+    const btn = form.querySelector<HTMLButtonElement>('button[type=submit]')!;
+    const label = btn.querySelector<HTMLElement>('.btn-label')!;
+    const loading = btn.querySelector<HTMLElement>('.btn-loading')!;
+
+    const showError = (msg: string) => { errorEl.textContent = msg; errorEl.classList.remove('hidden'); };
+    const clearErrors = () => {
+      errorEl.classList.add('hidden');
+      form.querySelectorAll<HTMLElement>('[aria-invalid]').forEach((el) => el.removeAttribute('aria-invalid'));
+    };
+
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      clearErrors();
+      const data = Object.fromEntries(new FormData(form).entries());
+      // Validación en el navegador con el mismo criterio que el servidor.
+      const invalid: string[] = [];
+      if (String(data.nombre || '').trim().length < 2) invalid.push('nombre');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(data.correo || ''))) invalid.push('correo');
+      if (String(data.mensaje || '').trim().length < 10) invalid.push('mensaje');
+      if (invalid.length) {
+        invalid.forEach((name) => form.querySelector(`[name=${name}]`)?.setAttribute('aria-invalid', 'true'));
+        showError('Revise los campos marcados: nombre, correo válido y una descripción del equipo.');
+        (form.querySelector(`[name=${invalid[0]}]`) as HTMLElement | null)?.focus();
+        return;
+      }
+
+      btn.disabled = true; label.classList.add('hidden'); loading.classList.remove('hidden');
+      try {
+        const res = await fetch('/api/contacto', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || !body.ok) {
+          if (body.errores) Object.keys(body.errores).forEach((k) => form.querySelector(`[name=${k}]`)?.setAttribute('aria-invalid', 'true'));
+          showError(body.error || Object.values(body.errores || {}).join(' ') || 'No pudimos enviar su mensaje. Inténtelo de nuevo o escríbanos por WhatsApp.');
+          return;
+        }
+        success.classList.remove('hidden');
+        success.classList.add('flex');
+        gsap.fromTo(success, { opacity: 0, scale: 0.98 }, { opacity: 1, scale: 1, duration: 0.5, ease: 'power3.out' });
+        gsap.fromTo(success.children, { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, stagger: 0.08, ease: 'power3.out', delay: 0.1 });
+      } catch {
+        showError('Sin conexión con el servidor. Escríbanos por WhatsApp mientras tanto.');
+      } finally {
+        btn.disabled = false; label.classList.remove('hidden'); loading.classList.add('hidden');
+      }
+    });
+
+    form.querySelector('.form-reset')?.addEventListener('click', () => {
+      form.reset();
+      success.classList.add('hidden');
+      success.classList.remove('flex');
+      (form.querySelector('[name=nombre]') as HTMLElement | null)?.focus();
+    });
+  }
+  document.addEventListener('astro:page-load', setupForm);
+</script>

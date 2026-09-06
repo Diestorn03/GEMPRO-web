@@ -1,0 +1,11 @@
+---
+import { sectors } from '../data/site';
+const line = sectors.join(' · ') + ' · ';
+---
+<section id="sectores" aria-label="Sectores industriales atendidos" class="marquee flex h-14 items-center overflow-hidden bg-green lg:h-16">
+  <div class="marquee-track" aria-hidden="true">
+    <span class="display whitespace-nowrap pr-12 text-[16px] tracking-[0.06em] text-ink lg:text-[22px]">{line}</span>
+    <span class="display whitespace-nowrap pr-12 text-[16px] tracking-[0.06em] text-ink lg:text-[22px]">{line}</span>
+  </div>
+  <p class="sr-only">Sectores: {sectors.join(', ')}.</p>
+</section>

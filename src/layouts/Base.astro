@@ -1,0 +1,79 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import '../styles/global.css';
+// URL final (con hash) del archivo de fuente principal, para precargarlo y pintar el titular antes.
+import archivoWoff2 from '@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2?url';
+import { site, withBase } from '../data/site';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import MobileBar from '../components/MobileBar.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** Cabecera transparente sobre una portada oscura */
+  transparentNav?: boolean;
+}
+const { title, description = site.description, transparentNav = true } = Astro.props;
+const fullTitle = title ? `${title} · ${site.name}` : `${site.name} · Ingeniería de mantenimiento predictivo`;
+// URL limpia (sin index.html ni .html) para canonical y Open Graph.
+const cleanPath = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/, '');
+const canonical = new URL(cleanPath, Astro.site ?? 'https://gempro.com.ve');
+const ogImage = new URL(withBase('/og.jpg'), Astro.site ?? 'https://gempro.com.ve');
+---
+<!doctype html>
+<html lang="es" class="js">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href={withBase('/favicon.ico')} sizes="any" />
+    <link rel="preload" href={archivoWoff2} as="font" type="font/woff2" crossorigin />
+    <meta name="theme-color" content="#061426" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content="es_VE" />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={ogImage} />
+    <script is:inline type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'LocalBusiness',
+      name: site.legalName,
+      alternateName: site.expanded,
+      url: site.url,
+      telephone: site.phone,
+      email: site.email,
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: 'Urb. Urdaneta, Av. principal con calle 9, Edif. GEMPRO PB No. 105-A',
+        addressLocality: 'Maracaibo',
+        addressRegion: 'Zulia',
+        addressCountry: 'VE',
+      },
+      sameAs: [site.social.facebook, site.social.instagram],
+    })} />
+    <!-- Marca "js" ya está en <html>; si el sistema de movimiento tardara o fallara, todo se muestra a los 2,5 s. -->
+    <script is:inline>
+      setTimeout(function () { document.documentElement.classList.add('motion-ready'); }, 2500);
+    </script>
+    <ClientRouter />
+  </head>
+  <body class="min-h-dvh flex flex-col">
+    <a href="#contenido" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded focus:bg-neon focus:px-4 focus:py-2 focus:text-ink" data-lenis-prevent>Saltar al contenido</a>
+    <Nav transparent={transparentNav} />
+    <main id="contenido" class="flex-1">
+      <slot />
+    </main>
+    <Footer />
+    <MobileBar />
+    <script>
+      import '../scripts/motion';
+    </script>
+  </body>
+</html>

@@ -1,0 +1,48 @@
+---
+import { Image } from 'astro:assets';
+import logoBlanco from '../assets/logos/logo-gempro-blanco.png';
+import { site, presence, withBase } from '../data/site';
+const year = new Date().getFullYear();
+---
+<footer class="bg-[#040f1e] pb-24 pt-14 md:pb-12 lg:pt-16">
+  <div class="container-x flex flex-col gap-10">
+    <div class="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+      <div class="flex flex-col gap-4">
+        <Image src={logoBlanco} alt="GEMPRO" height={46} width={180} class="h-[46px] w-auto self-start" loading="lazy" />
+        <p class="max-w-[360px] text-[14px] leading-relaxed text-mist">{site.expanded}. {site.address}.</p>
+        <div class="flex gap-4 pt-1">
+          <a href={site.social.facebook} target="_blank" rel="noopener" class="text-mist transition-colors hover:text-neon" aria-label="Facebook de GEMPRO">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 22v-8h2.7l.4-3.2h-3.1V8.8c0-.9.3-1.6 1.6-1.6h1.7V4.4c-.3 0-1.3-.1-2.5-.1-2.5 0-4.1 1.5-4.1 4.2v2.3H7.4V14h2.8v8h3.3z"/></svg>
+          </a>
+          <a href={site.social.instagram} target="_blank" rel="noopener" class="text-mist transition-colors hover:text-neon" aria-label="Instagram de GEMPRO">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+          </a>
+        </div>
+      </div>
+      <div class="flex flex-col gap-2.5 text-[14px]">
+        <span class="eyebrow mb-1.5">Servicios</span>
+        <a href={withBase('/servicios#predictivo')} class="text-white/85 transition-colors hover:text-neon">Predictivo</a>
+        <a href={withBase('/servicios#proactivo')} class="text-white/85 transition-colors hover:text-neon">Proactivo</a>
+        <a href={withBase('/servicios#preventivo')} class="text-white/85 transition-colors hover:text-neon">Preventivo</a>
+        <a href={withBase('/servicios#correctivo')} class="text-white/85 transition-colors hover:text-neon">Correctivo</a>
+      </div>
+      <div class="flex flex-col gap-2.5 text-[14px]">
+        <span class="eyebrow mb-1.5">Empresa</span>
+        <a href={withBase('/#proceso')} class="text-white/85 transition-colors hover:text-neon">Cómo trabajamos</a>
+        <a href={withBase('/#equipos')} class="text-white/85 transition-colors hover:text-neon">Equipos</a>
+        <a href={withBase('/#adiestramiento')} class="text-white/85 transition-colors hover:text-neon">Adiestramiento</a>
+        <a href={withBase('/#contacto')} class="text-white/85 transition-colors hover:text-neon">Contacto</a>
+      </div>
+      <div class="flex flex-col gap-2.5 text-[14px]">
+        <span class="eyebrow mb-1.5">Sedes</span>
+        {presence.map((p) => (
+          <a href={`tel:${p.tel}`} class="text-white/85 transition-colors hover:text-neon">{p.country} <span class="text-mist">· {p.phone}</span></a>
+        ))}
+      </div>
+    </div>
+    <div class="flex flex-col gap-3 border-t border-white/10 pt-6 font-mono text-[12px] tracking-[0.08em] text-mist sm:flex-row sm:items-center sm:justify-between">
+      <span>© {year} {site.legalName} · RIF {site.rif}</span>
+      <span class="uppercase">{site.tagline}</span>
+    </div>
+  </div>
+</footer>
