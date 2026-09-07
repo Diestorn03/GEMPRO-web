@@ -1,15 +1,13 @@
 /**
- * Endpoint del formulario de contacto.
- * En local guarda cada consulta en data/mensajes.json y responde con éxito.
- * Para producción, sustituir el bloque "guardar" por el envío de correo (Resend, Formspree, SMTP).
+ * Endpoint del formulario de contacto. Antes escribía en data/mensajes.json — eso nunca
+ * funcionó en producción: GitHub Pages no ejecuta esta ruta (ver commit de migración a
+ * Vercel), y aunque hubiera corrido, el sistema de archivos de una función serverless no
+ * persiste entre despliegues. Ahora inserta en la tabla `mensajes` de Supabase.
  */
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { promises as fs } from 'node:fs';
-import path from 'node:path';
-
-const FILE = path.resolve(process.cwd(), 'data', 'mensajes.json');
+import { sb } from '../../lib/supabase';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
@@ -41,15 +39,9 @@ export const POST: APIRoute = async ({ request }) => {
   if (mensaje.length < 10) errores.mensaje = 'Cuéntenos el equipo y el síntoma (mínimo 10 caracteres).';
   if (Object.keys(errores).length) return json({ ok: false, errores }, 422);
 
-  const registro = { fecha: new Date().toISOString(), nombre, empresa, correo, telefono, mensaje };
-
   try {
-    await fs.mkdir(path.dirname(FILE), { recursive: true });
-    let lista: unknown[] = [];
-    try { lista = JSON.parse(await fs.readFile(FILE, 'utf8')); } catch { lista = []; }
-    if (!Array.isArray(lista)) lista = [];
-    lista.push(registro);
-    await fs.writeFile(FILE, JSON.stringify(lista, null, 2), 'utf8');
+    const { error } = await sb().from('mensajes').insert({ nombre, empresa: empresa || null, correo, telefono: telefono || null, mensaje });
+    if (error) throw error;
   } catch (err) {
     console.error('[contacto] no se pudo guardar el mensaje', err);
     return json({ ok: false, error: 'No pudimos registrar su mensaje. Escríbanos por WhatsApp.' }, 500);
