@@ -12,7 +12,10 @@ export const GET: APIRoute = async () => {
   const v = (k: string) => (import.meta.env as Record<string, string | undefined>)[k] || process.env[k] || '';
   // Consulta real a la base (solo cuenta filas): distingue "variable puesta" de "conexión que funciona".
   let base_de_datos = 'sin probar';
+  const clave = v('SUPABASE_SERVICE_KEY');
+  const claveEnmascarada = /[•*]/.test(clave) || (clave.length > 0 && clave.length < 100);
   try {
+    if (claveEnmascarada) throw new Error('SUPABASE_SERVICE_KEY parece pegada enmascarada o incompleta (contiene "•" o es muy corta). Copiar la clave completa desde Supabase → Project Settings → API → service_role → "Reveal".');
     const { error } = await sb().from('noticias').select('id', { count: 'exact', head: true });
     base_de_datos = error ? `error: ${error.message}` : 'ok';
   } catch (e) { base_de_datos = `error: ${(e as Error).message}`; }
