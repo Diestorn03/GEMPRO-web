@@ -1,0 +1,21 @@
+---
+/**
+ * Solo presentación — la verificación de sesión NO puede hacerse aquí: Astro.redirect()
+ * devuelto desde un componente anidado llega tarde (la página que lo usa ya empezó a
+ * renderizar su propia respuesta), y produce "ResponseSentError". Cada página que use este
+ * layout debe comprobar estaAutenticado(Astro.cookies) y redirigir ANTES del <Panel>.
+ */
+import PanelBase from './PanelBase.astro';
+
+interface Props { title?: string }
+const { title } = Astro.props;
+---
+<PanelBase title={title}>
+  <nav slot="nav" class="flex items-center gap-1 text-[13px] font-semibold">
+    <a href="/panel" class="rounded px-3 py-2 text-white/85 transition-colors hover:text-neon">Clientes</a>
+    <a href="/panel/evento" class="rounded px-3 py-2 text-white/85 transition-colors hover:text-neon">Evento</a>
+    <a href="/" target="_blank" class="rounded px-3 py-2 text-mist transition-colors hover:text-neon">Sitio público ↗</a>
+    <form method="post" action="/api/salir" data-ajax><button type="submit" class="rounded px-3 py-2 text-mist transition-colors hover:text-neon">Salir</button></form>
+  </nav>
+  <slot />
+</PanelBase>

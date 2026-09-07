@@ -1,0 +1,46 @@
+---
+import Panel from '../../layouts/Panel.astro';
+import { estaAutenticado } from '../../lib/auth';
+import { sb } from '../../lib/supabase';
+
+export const prerender = false;
+
+if (!estaAutenticado(Astro.cookies)) return Astro.redirect('/entrar', 303);
+
+const { id } = Astro.params;
+const { data: cliente } = await sb().from('clientes').select('*').eq('id', id).maybeSingle();
+if (!cliente) return Astro.redirect('/panel', 303);
+
+const { data: informes } = await sb().from('informes').select('*').eq('cliente_id', id).order('subido_en', { ascending: false });
+const base = Astro.url.origin;
+---
+<Panel title={cliente.nombre_empresa}>
+  <a href="/panel" class="mb-4 inline-block text-[13px] text-mist hover:text-neon">← Clientes</a>
+  <h1 class="display mb-1 text-[32px] text-white">{cliente.nombre_empresa}</h1>
+  <p class="mb-8 font-mono text-[13px] text-neon">{base}/c/{cliente.token}</p>
+
+  <form method="post" action="/api/panel/informes" enctype="multipart/form-data" data-ajax class="mb-8 flex flex-col gap-3 rounded-md border border-white/10 bg-panel p-6 sm:flex-row sm:items-end">
+    <input type="hidden" name="cliente_id" value={cliente.id} />
+    <div class="flex-1">
+      <label class="mb-1.5 block text-[13px] font-semibold text-white">Subir informes técnicos</label>
+      <input type="file" name="archivos" multiple class="field text-[13px]" />
+    </div>
+    <button type="submit" class="btn-primary whitespace-nowrap">Subir</button>
+  </form>
+
+  <div class="grid gap-2.5">
+    {(informes ?? []).map((inf) => (
+      <div class="flex items-center justify-between gap-3 rounded-md border border-white/10 bg-panel px-5 py-3.5">
+        <span class="min-w-0 truncate text-[14px] text-white">{inf.nombre_archivo}</span>
+        <form method="post" action="/api/panel/informes" data-ajax>
+          <input type="hidden" name="_accion" value="eliminar" />
+          <input type="hidden" name="cliente_id" value={cliente.id} />
+          <input type="hidden" name="id" value={inf.id} />
+          <input type="hidden" name="ruta_storage" value={inf.ruta_storage} />
+          <button type="submit" class="text-[13px] text-amber hover:underline">Eliminar</button>
+        </form>
+      </div>
+    ))}
+    {(informes ?? []).length === 0 && <p class="rounded-md border border-white/10 bg-panel p-10 text-center text-mist">Todavía no hay informes para este cliente.</p>}
+  </div>
+</Panel>

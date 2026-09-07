@@ -1,0 +1,42 @@
+---
+import PanelBase from '../layouts/PanelBase.astro';
+
+export const prerender = false;
+
+const { searchParams } = Astro.url;
+const error = searchParams.get('error');
+---
+<PanelBase title="Entrar">
+  <nav slot="nav"></nav>
+  <div class="mx-auto flex max-w-sm items-center justify-center py-16">
+    <form method="post" action="/api/entrar" data-ajax class="w-full rounded-md border border-white/10 bg-panel p-8">
+      <p class="eyebrow mb-2">Panel privado</p>
+      <h1 class="display mb-1 text-[26px] text-white">Acceso del equipo</h1>
+      <p class="mb-6 text-[14px] text-mist">Solo para GEMPRO.</p>
+      {error && <p class="mb-4 rounded border border-amber/40 bg-amber/10 px-3 py-2 text-[13px] text-amber" role="alert">Contraseña incorrecta.</p>}
+      <label for="password" class="mb-1.5 block text-[13px] font-semibold text-white">Contraseña</label>
+      <div class="relative mb-5">
+        <input id="password" name="password" type="password" required autofocus class="field pr-12" autocomplete="current-password" />
+        <button type="button" id="ver-contrasena" aria-label="Mostrar contraseña" class="absolute right-2 top-1/2 -translate-y-1/2 rounded p-2 text-mist transition-colors hover:text-white">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+        </button>
+      </div>
+      <button type="submit" class="btn-primary w-full">Entrar</button>
+    </form>
+  </div>
+</PanelBase>
+
+<script>
+  function setup() {
+    const boton = document.getElementById('ver-contrasena');
+    const campo = document.getElementById('password') as HTMLInputElement | null;
+    if (!boton || !campo) return;
+    boton.addEventListener('click', () => {
+      const ver = campo.type === 'password';
+      campo.type = ver ? 'text' : 'password';
+      boton.setAttribute('aria-label', ver ? 'Ocultar contraseña' : 'Mostrar contraseña');
+    });
+  }
+  document.addEventListener('astro:page-load', setup);
+  document.addEventListener('DOMContentLoaded', setup);
+</script>

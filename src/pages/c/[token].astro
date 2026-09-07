@@ -1,0 +1,59 @@
+---
+import PanelBase from '../../layouts/PanelBase.astro';
+import { clienteAutenticado } from '../../lib/auth';
+import { sb } from '../../lib/supabase';
+
+export const prerender = false;
+
+const { token } = Astro.params;
+const { data: cliente } = await sb().from('clientes').select('*').eq('token', token).maybeSingle();
+if (!cliente) return new Response('No encontrado', { status: 404 });
+
+const autenticado = clienteAutenticado(Astro.cookies, cliente.id);
+const error = Astro.url.searchParams.get('error');
+
+let informes: { id: string; nombre_archivo: string; url: string }[] = [];
+if (autenticado) {
+  const { data } = await sb().from('informes').select('*').eq('cliente_id', cliente.id).order('subido_en', { ascending: false });
+  informes = await Promise.all(
+    (data ?? []).map(async (inf) => {
+      const { data: firmada } = await sb().storage.from('informes-tecnicos').createSignedUrl(inf.ruta_storage, 300);
+      return { id: inf.id, nombre_archivo: inf.nombre_archivo, url: firmada?.signedUrl ?? '' };
+    })
+  );
+}
+---
+<PanelBase title={cliente.nombre_empresa}>
+  <nav slot="nav"></nav>
+  {!autenticado ? (
+    <div class="mx-auto flex max-w-sm flex-col gap-5 rounded-md border border-white/10 bg-panel p-8">
+      <div>
+        <p class="eyebrow mb-1">Portal de {cliente.nombre_empresa}</p>
+        <h1 class="display text-[24px] text-white">Ingresa tu contraseña</h1>
+      </div>
+      {error === '1' && <p class="rounded border border-amber/40 bg-amber/10 px-3 py-2 text-[13px] text-amber" role="alert">Contraseña incorrecta.</p>}
+      <form method="post" action="/api/c/entrar" data-ajax class="flex flex-col gap-4">
+        <input type="hidden" name="token" value={token} />
+        <div>
+          <label for="password" class="mb-1.5 block text-[13px] font-semibold text-white">Contraseña</label>
+          <input id="password" name="password" type="password" required autofocus class="field" />
+        </div>
+        <button type="submit" class="btn-primary">Entrar</button>
+      </form>
+    </div>
+  ) : (
+    <div class="mx-auto max-w-2xl">
+      <p class="eyebrow mb-1">Portal de {cliente.nombre_empresa}</p>
+      <h1 class="display mb-8 text-[28px] text-white">Sus informes técnicos</h1>
+      <div class="grid gap-2.5">
+        {informes.map((inf) => (
+          <a href={inf.url} class="flex items-center justify-between gap-3 rounded-md border border-white/10 bg-panel px-5 py-4 transition-colors hover:border-neon/50">
+            <span class="min-w-0 truncate text-[15px] text-white">{inf.nombre_archivo}</span>
+            <span class="shrink-0 text-[13px] font-bold uppercase tracking-[0.08em] text-neon">Descargar</span>
+          </a>
+        ))}
+        {informes.length === 0 && <p class="rounded-md border border-white/10 bg-panel p-10 text-center text-mist">Todavía no hay informes para descargar.</p>}
+      </div>
+    </div>
+  )}
+</PanelBase>

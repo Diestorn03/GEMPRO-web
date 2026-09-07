@@ -1,0 +1,63 @@
+---
+import Panel from '../../layouts/Panel.astro';
+import { estaAutenticado } from '../../lib/auth';
+import { sb } from '../../lib/supabase';
+
+export const prerender = false;
+
+if (!estaAutenticado(Astro.cookies)) return Astro.redirect('/entrar', 303);
+
+const { data: clientes } = await sb().from('clientes').select('*').order('creado_en', { ascending: false });
+const error = Astro.url.searchParams.get('error');
+const nuevo = Astro.url.searchParams.get('nuevo');
+const base = Astro.url.origin;
+---
+<Panel title="Clientes">
+  <div class="mb-8 flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <p class="eyebrow mb-1">Portal de clientes</p>
+      <h1 class="display text-[32px] text-white">{clientes?.length ?? 0} cliente{clientes?.length === 1 ? '' : 's'}</h1>
+    </div>
+  </div>
+
+  <form method="post" action="/api/panel/clientes" data-ajax class="mb-8 grid gap-4 rounded-md border border-white/10 bg-panel p-6 sm:grid-cols-2">
+    <h2 class="display text-[20px] text-white sm:col-span-2">Nuevo cliente</h2>
+    {error === '1' && <p class="text-[13px] text-amber sm:col-span-2" role="alert">Falta el nombre de la empresa o la contraseña es muy corta (mínimo 4 caracteres).</p>}
+    <div>
+      <label class="mb-1.5 block text-[13px] font-semibold text-white">Empresa</label>
+      <input name="nombre_empresa" required class="field" placeholder="Nombre de la empresa" />
+    </div>
+    <div>
+      <label class="mb-1.5 block text-[13px] font-semibold text-white">Contacto (opcional)</label>
+      <input name="contacto" class="field" placeholder="Nombre de la persona de contacto" />
+    </div>
+    <div class="sm:col-span-2">
+      <label class="mb-1.5 block text-[13px] font-semibold text-white">Contraseña para este cliente</label>
+      <input name="password" required minlength={4} class="field" placeholder="La que le van a compartir junto con el link" />
+    </div>
+    <button type="submit" class="btn-primary self-start sm:col-span-2">Crear cliente</button>
+  </form>
+
+  {nuevo === '1' && <p class="mb-6 rounded border border-neon/40 bg-neon/10 px-4 py-3 text-[14px] text-white">Cliente creado. Copia su link de abajo y compártelo junto con la contraseña que le pusiste.</p>}
+
+  <div class="grid gap-3">
+    {(clientes ?? []).map((c) => (
+      <div class="flex flex-col gap-3 rounded-md border border-white/10 bg-panel p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div class="min-w-0">
+          <p class="truncate text-[16px] font-semibold text-white">{c.nombre_empresa}</p>
+          {c.contacto && <p class="text-[13px] text-mist">{c.contacto}</p>}
+          <p class="mt-1 font-mono text-[12px] text-neon">{base}/c/{c.token}</p>
+        </div>
+        <div class="flex shrink-0 gap-2">
+          <a href={`/panel/${c.id}`} class="btn-ghost border border-white/15 px-4 py-2 text-[13px]">Informes</a>
+          <form method="post" action="/api/panel/clientes" data-ajax data-confirmar="¿Eliminar este cliente y sus informes?">
+            <input type="hidden" name="_accion" value="eliminar" />
+            <input type="hidden" name="id" value={c.id} />
+            <button type="submit" class="btn-ghost border border-white/15 px-4 py-2 text-[13px] text-amber">Eliminar</button>
+          </form>
+        </div>
+      </div>
+    ))}
+    {(clientes ?? []).length === 0 && <p class="rounded-md border border-white/10 bg-panel p-10 text-center text-mist">Todavía no hay clientes en el portal.</p>}
+  </div>
+</Panel>

@@ -42,11 +42,29 @@ export function estaAutenticado(cookies: AstroCookies): boolean {
   return igual(c, firma());
 }
 
-/** Compara una contraseña de cliente contra su hash guardado (pgcrypto/bcrypt vía Supabase RPC, o
- *  un hash sha256+sal simple si se implementa aquí — se define al construir el portal). */
+/** Contraseña propia de cada cliente del portal: hash sha256 con sal aleatoria por cliente
+ *  (no se reutiliza AUTH_SECRET aquí — cada cliente tiene su propio secreto de verdad). */
 export function hashContrasena(texto: string, sal: string): string {
   return createHash('sha256').update(sal + ':' + texto).digest('hex');
 }
 export function contrasenaClienteCorrecta(intento: string, sal: string, hashGuardado: string): boolean {
   return igual(hashContrasena(intento, sal), hashGuardado);
 }
+
+/** Sesión de UN cliente del portal: la cookie firma su propio id, así que no sirve para
+ *  entrar a la página de otro cliente aunque se copie o se adivine el token de la URL. */
+const COOKIE_CLIENTE = 'gp_cliente';
+function firmaCliente(clienteId: string): string {
+  return createHmac('sha256', secreto()).update(`cliente:${clienteId}`).digest('hex');
+}
+export function valorCookieCliente(clienteId: string): string {
+  return `${clienteId}.${firmaCliente(clienteId)}`;
+}
+export function clienteAutenticado(cookies: AstroCookies, clienteId: string): boolean {
+  if (!secreto()) return false;
+  const c = cookies.get(COOKIE_CLIENTE)?.value ?? '';
+  const [id, firma] = c.split('.');
+  if (id !== clienteId || !firma) return false;
+  return igual(firma, firmaCliente(clienteId));
+}
+export { COOKIE_CLIENTE };
