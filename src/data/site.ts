@@ -36,9 +36,9 @@ export const site = {
 
 export const nav = [
   { label: 'Servicios', href: withBase('/servicios') },
-  { label: 'Equipos', href: withBase('/#equipos') },
-  { label: 'Adiestramiento', href: withBase('/#adiestramiento') },
-  { label: 'Presencia', href: withBase('/#presencia') },
+  { label: 'Nosotros', href: withBase('/nosotros') },
+  { label: 'Productos', href: withBase('/productos') },
+  { label: 'Noticias', href: withBase('/noticias') },
 ];
 
 export const hero = {
@@ -131,6 +131,69 @@ export const presence = [
   { country: 'Argentina', city: 'Buenos Aires', phone: '+54 911 2539-8609', tel: '+5491125398609', address: 'Calle Julián Álvarez 2335, apto 6F, CABA', email: 'gempro.ar@gmail.com' },
   { country: 'Perú', city: 'Lima', phone: '+51 916 710 376', tel: '+51916710376', address: 'Calle Padre Urraca 140, San Miguel, Lima', email: 'gemproperu@gmail.com' },
   { country: 'Panamá', city: 'Costa del Este', phone: '+507 621-33648', tel: '+50762133648', address: 'Parque Industrial Costa del Este, Calle 3era, Edif. Istorage Piso M-01', email: 'info@gempropanama.com' },
+];
+
+/** Página /nosotros */
+export const nosotros = {
+  eyebrow: 'Quiénes somos',
+  title: ['Ingenieros que miden', 'antes de intervenir.'],
+  intro:
+    'GEMPRO nace para que la decisión de parar una máquina —o dejarla seguir— se tome con datos, no con intuición. Un equipo técnico con más de 60 años de experiencia acumulada, trabajando hoy en Venezuela, Argentina, Perú y Panamá.',
+  valores: [
+    { title: 'Medir primero', text: 'Ninguna recomendación sale sin una medición que la respalde. Vibración, temperatura, alineación: números, no corazonadas.' },
+    { title: 'La causa, no el síntoma', text: 'Una falla que vuelve no se resuelve cambiando la pieza otra vez. Se busca por qué volvió a fallar.' },
+    { title: 'El informe es el entregable', text: 'Cada intervención cierra con un informe técnico verificable: antes, después y recomendación. Sin informe no hay cierre.' },
+    { title: 'Presencia regional', text: 'Cuatro países, un mismo estándar de medición y el mismo equipo técnico detrás.' },
+  ],
+};
+
+/** Página /productos: equipos que GEMPRO usa y representa, con más detalle que el resumen de inicio. */
+export const productos = [
+  {
+    id: 'vibracion', marca: 'Analizadores FFT', tag: 'Vibración',
+    text: 'Analizadores portátiles y sistemas de monitoreo en línea, con software de diagnóstico para espectro, fase, órbitas y cascada espectral.',
+  },
+  {
+    id: 'termografia', marca: 'HIKMICRO', tag: 'Termografía',
+    text: 'Cámaras termográficas de imagen radiométrica de alta resolución, para tableros eléctricos, motores, hornos y aislamiento.',
+  },
+  {
+    id: 'laser', marca: 'Easy-Laser', tag: 'Alineación',
+    text: 'Sistemas de alineación láser de precisión para ejes, poleas y geometría de bancadas — el mismo estándar en los cuatro países donde operamos.',
+  },
+  {
+    id: 'balanceo', marca: 'JP Balancer', tag: 'Balanceo',
+    text: 'Equipos de balanceo dinámico en sitio y en taller, para rotores, impulsores y ventiladores.',
+  },
+  {
+    id: 'ultrasonido', marca: 'Detectores acústicos', tag: 'Ultrasonido',
+    text: 'Detección de fugas de aire y gases, evaluación de rodamientos y verificación de trampas de vapor.',
+  },
+];
+
+/** Página /noticias: contenido propio de GEMPRO sobre sus áreas de trabajo (no anuncios de terceros). */
+export const noticias = [
+  {
+    id: 'que-es-mantenimiento-predictivo',
+    tag: 'Predictivo', fecha: '[FECHA]',
+    title: '¿Qué es el mantenimiento predictivo y por qué su planta lo necesita?',
+    extracto: 'Medir la condición de un equipo antes de que falle cambia el costo de una reparación: de una parada no planificada a una intervención programada.',
+    href: withBase('/servicios#predictivo'),
+  },
+  {
+    id: 'senales-de-desalineacion',
+    tag: 'Proactivo', fecha: '[FECHA]',
+    title: 'Cinco señales de que un eje está desalineado (y por qué vuelve a fallar)',
+    extracto: 'La vibración vuelve, el rodamiento se recalienta, el acople se desgasta antes de tiempo. La causa casi siempre está en el montaje, no en la pieza.',
+    href: withBase('/servicios#proactivo'),
+  },
+  {
+    id: 'plan-mantenimiento-rcm',
+    tag: 'Preventivo', fecha: '[FECHA]',
+    title: 'Cómo armar un plan de mantenimiento por criticidad, no por calendario',
+    extracto: 'No todos los equipos merecen la misma frecuencia de inspección. RCM prioriza según qué tan crítico es cada activo para la operación.',
+    href: withBase('/servicios#preventivo'),
+  },
 ];
 
 export const contact = {

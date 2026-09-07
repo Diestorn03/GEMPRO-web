@@ -1,0 +1,67 @@
+---
+import { Image, Picture } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import Contact from '../components/Contact.astro';
+import { productos, brands } from '../data/site';
+import fotoProductos from '../assets/img/hero-productos.jpg';
+import prodVibracion from '../assets/img/producto-analizador-vibracion.jpg';
+import prodTermografia from '../assets/img/producto-termografia.jpg';
+import prodLaser from '../assets/img/producto-alineacion-laser.jpg';
+import prodBalanceo from '../assets/img/producto-mesa-balanceo.jpg';
+import prodUltrasonido from '../assets/img/producto-ultrasonido.jpg';
+import logoEasylaser from '../assets/logos/logo-easylaser.png';
+import logoSemapi from '../assets/logos/logo-semapi.png';
+import logoHikmicro from '../assets/logos/logo-hikmicro.png';
+import logoJpbalancer from '../assets/logos/logo-jpbalancer.png';
+
+const fotos: Record<string, ImageMetadata> = { vibracion: prodVibracion, termografia: prodTermografia, laser: prodLaser, balanceo: prodBalanceo, ultrasonido: prodUltrasonido };
+const logos: Record<string, { img: ImageMetadata; h: string }> = {
+  easylaser: { img: logoEasylaser, h: 'h-[22px]' },
+  semapi: { img: logoSemapi, h: 'h-[26px]' },
+  hikmicro: { img: logoHikmicro, h: 'h-[18px]' },
+  jpbalancer: { img: logoJpbalancer, h: 'h-[30px]' },
+};
+---
+<Base title="Productos" description="Los equipos que GEMPRO usa y representa: analizadores de vibración, cámaras termográficas HIKMICRO, sistemas de alineación Easy-Laser, balanceadoras JP Balancer y detectores de ultrasonido.">
+  <section class="relative isolate overflow-hidden bg-ink pb-16 pt-36 lg:pb-20 lg:pt-52" data-parallax-scope>
+    <div class="absolute inset-0 -z-20" data-parallax="12">
+      <Image src={fotoProductos} alt="" widths={[768, 1280, 1920]} sizes="100vw" class="h-full w-full object-cover" loading="eager" />
+    </div>
+    <div class="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(6,20,38,.96)_0%,rgba(6,20,38,.82)_55%,rgba(6,20,38,.55)_100%)]" aria-hidden="true"></div>
+    <div class="container-x flex flex-col gap-4">
+      <span class="eyebrow" data-reveal="fade">Productos</span>
+      <h1 class="display max-w-[900px] text-[clamp(40px,7vw,84px)] text-white" data-split>Los mismos equipos que usamos en su planta.</h1>
+      <p class="max-w-[640px] text-[17px] leading-relaxed text-fog lg:text-[19px]" data-reveal data-delay="0.3">No solo medimos con ellos: los representamos y los vendemos, con el respaldo de saberlos operar todos los días.</p>
+    </div>
+  </section>
+
+  <section class="container-x grid gap-4 py-16 sm:grid-cols-2 lg:grid-cols-3 lg:py-24" data-reveal-group data-stagger="0.1">
+    {productos.map((p) => (
+      <article class="group flex flex-col overflow-hidden rounded-md border border-white/10 bg-panel transition-[border-color,transform] duration-500 hover:-translate-y-1.5 hover:border-neon/50">
+        <div class="h-[200px] overflow-hidden">
+          <Picture src={fotos[p.id]} alt={p.marca} formats={['avif', 'webp']} widths={[400, 640, 900]} sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" class="h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-105" loading="lazy" pictureAttributes={{ class: 'contents' }} />
+        </div>
+        <div class="flex flex-col gap-2 p-6">
+          <span class="font-mono text-[11px] uppercase tracking-[0.14em] text-neon">{p.tag}</span>
+          <h2 class="display text-[24px] text-white">{p.marca}</h2>
+          <p class="text-[14px] leading-relaxed text-mist">{p.text}</p>
+        </div>
+      </article>
+    ))}
+  </section>
+
+  <section class="border-t border-white/10 bg-panel py-16 lg:py-20">
+    <div class="container-x flex flex-col gap-7">
+      <span class="eyebrow" data-reveal="fade">Marcas que representamos</span>
+      <ul class="flex flex-wrap items-center gap-3" data-reveal-group data-stagger="0.08" aria-label="Marcas representadas">
+        {brands.map((b) => (
+          <li class="flex items-center rounded bg-white px-5 py-3">
+            <Image src={logos[b.id].img} alt={b.name} height={30} class={`${logos[b.id].h} w-auto`} loading="lazy" />
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <Contact />
+</Base>

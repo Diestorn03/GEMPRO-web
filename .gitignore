@@ -4,6 +4,8 @@ dist/
 test-results/
 playwright-report/
 data/mensajes.json
-.env
+.env*
+!.env.example
 capturas/
 server.log
+.vercel/

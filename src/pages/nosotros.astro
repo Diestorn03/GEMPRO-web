@@ -1,0 +1,52 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import Contact from '../components/Contact.astro';
+import Stats from '../components/Stats.astro';
+import { nosotros, sectors } from '../data/site';
+import fotoEquipo from '../assets/img/equipo-gempro.png';
+---
+<Base title="Nosotros" description="GEMPRO: ingeniería de mantenimiento predictivo con más de 60 años de experiencia acumulada, presencia en Venezuela, Argentina, Perú y Panamá.">
+  <section class="relative isolate overflow-hidden bg-ink pb-16 pt-36 lg:pb-20 lg:pt-52" data-parallax-scope>
+    <div class="absolute inset-0 -z-20" data-parallax="12">
+      <Image src={fotoEquipo} alt="" widths={[768, 1280, 1920]} sizes="100vw" class="h-full w-full object-cover object-[50%_25%]" loading="eager" />
+    </div>
+    <div class="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(6,20,38,.96)_0%,rgba(6,20,38,.82)_55%,rgba(6,20,38,.55)_100%)]" aria-hidden="true"></div>
+    <div class="container-x flex flex-col gap-4">
+      <span class="eyebrow" data-reveal="fade">{nosotros.eyebrow}</span>
+      <h1 class="display max-w-[900px] text-[clamp(40px,7vw,84px)] text-white" data-split>
+        {nosotros.title[0]} <span class="text-neon">{nosotros.title[1]}</span>
+      </h1>
+      <p class="max-w-[640px] text-[17px] leading-relaxed text-fog lg:text-[19px]" data-reveal data-delay="0.3">{nosotros.intro}</p>
+    </div>
+  </section>
+
+  <section class="container-x flex flex-col gap-10 py-16 lg:gap-14 lg:py-24">
+    <div class="flex flex-col gap-4">
+      <span class="eyebrow" data-reveal="fade">Cómo trabajamos</span>
+      <h2 class="display max-w-[700px] text-[clamp(30px,4vw,48px)] text-white" data-split>Cuatro principios, no un eslogan.</h2>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" data-reveal-group data-stagger="0.1">
+      {nosotros.valores.map((v) => (
+        <div class="flex flex-col gap-2.5 rounded-md border border-white/10 bg-panel p-6">
+          <h3 class="display text-[22px] text-white">{v.title}</h3>
+          <p class="text-[14px] leading-relaxed text-mist">{v.text}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <Stats />
+
+  <section class="container-x flex flex-col gap-6 py-16 lg:py-24">
+    <span class="eyebrow" data-reveal="fade">Sectores</span>
+    <h2 class="display max-w-[700px] text-[clamp(30px,4vw,48px)] text-white" data-split>Plantas que no se pueden dar el lujo de parar.</h2>
+    <ul class="flex flex-wrap gap-2.5" data-reveal-group data-stagger="0.04" aria-label="Sectores atendidos">
+      {sectors.map((s) => (
+        <li class="rounded-full border border-white/15 px-4 py-2 text-[14px] text-white/85">{s}</li>
+      ))}
+    </ul>
+  </section>
+
+  <Contact />
+</Base>

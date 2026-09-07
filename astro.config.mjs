@@ -1,21 +1,18 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-import node from '@astrojs/node';
+import vercel from '@astrojs/vercel';
 import tailwindcss from '@tailwindcss/vite';
 
-// Sitio estático (HTML pregenerado) + un único endpoint bajo demanda (/api/contacto).
-// El adaptador de Node en modo "middleware" se monta en server.mjs (Express + compresión).
-// Para producción en Cloudflare Pages/Netlify basta cambiar el adaptador y el destino del formulario.
-// GITHUB_PAGES=true lo activa el workflow de despliegue (.github/workflows/pages.yml).
-// En local (npm run dev/build/preview) la base sigue siendo "/", sin afectar nada de lo actual.
-const isGithubPages = process.env.GITHUB_PAGES === 'true';
-
+// Sitio en Vercel: las páginas de mercadeo se generan estáticas (cada una marca
+// `export const prerender = true`), y las rutas que necesitan servidor (el
+// formulario de contacto, el portal de clientes, la página del evento) quedan
+// dinámicas por defecto. Antes vivía en GitHub Pages, que no ejecuta servidores;
+// por eso el formulario nunca funcionó ahí. Cuando GEMPRO tenga su propio dominio,
+// se agrega como dominio personalizado de este mismo proyecto de Vercel.
 export default defineConfig({
-  site: isGithubPages ? 'https://diestorn03.github.io' : 'https://gempro.com.ve',
-  base: isGithubPages ? '/GEMPRO-web' : '/',
+  site: 'https://gempro.com.ve',
   output: 'static',
-  adapter: node({ mode: 'middleware' }),
-  build: { format: 'file' },
+  adapter: vercel(),
   vite: {
     plugins: [tailwindcss()],
   },
