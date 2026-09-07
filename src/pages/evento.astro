@@ -1,0 +1,78 @@
+---
+/** Página del evento con QR: sin enlace en el menú, solo se llega escaneando el código. */
+import PanelBase from '../layouts/PanelBase.astro';
+import { sb } from '../lib/supabase';
+import { eventoAbierto } from '../lib/evento';
+
+export const prerender = false;
+
+const { data: config } = await sb().from('evento_config').select('*').eq('id', true).maybeSingle();
+const abierto = eventoAbierto(config);
+---
+<PanelBase title="Registro del evento">
+  <nav slot="nav"></nav>
+  <div class="mx-auto max-w-md py-10">
+    {abierto ? (
+      <div id="tarjeta-evento" class="rounded-md border border-white/10 bg-panel p-8">
+        <p class="eyebrow mb-2">GEMPRO en el evento</p>
+        <h1 class="display mb-2 text-[28px] text-white">Regístrate y participa</h1>
+        <p class="mb-6 text-[14px] text-mist">Deja tus datos para entrar a la rifa y recibir novedades de GEMPRO.</p>
+        <form id="form-evento" class="flex flex-col gap-4" novalidate>
+          <div>
+            <label class="mb-1.5 block text-[13px] font-semibold text-white">Nombre</label>
+            <input name="nombre" required minlength="2" class="field" placeholder="Su nombre" />
+          </div>
+          <div>
+            <label class="mb-1.5 block text-[13px] font-semibold text-white">Correo</label>
+            <input name="correo" type="email" required class="field" placeholder="nombre@correo.com" />
+          </div>
+          <div>
+            <label class="mb-1.5 block text-[13px] font-semibold text-white">Teléfono (opcional)</label>
+            <input name="telefono" type="tel" class="field" placeholder="+58" />
+          </div>
+          <div class="absolute -left-[9999px]" aria-hidden="true"><label>No rellenar <input type="text" name="empresa_web" tabindex="-1" autocomplete="off" /></label></div>
+          <p class="error-evento hidden text-[13px] text-amber" role="alert"></p>
+          <button type="submit" class="btn-primary">Registrarme</button>
+        </form>
+      </div>
+    ) : (
+      <div class="rounded-md border border-white/10 bg-panel p-8 text-center">
+        <p class="eyebrow mb-2">GEMPRO</p>
+        <h1 class="display mb-2 text-[24px] text-white">El registro no está disponible</h1>
+        <p class="text-[14px] text-mist">El registro del evento no está activo en este momento.</p>
+      </div>
+    )}
+  </div>
+</PanelBase>
+
+<script>
+  function setup() {
+    const form = document.getElementById('form-evento') as HTMLFormElement | null;
+    if (!form) return;
+    const errorEl = form.querySelector<HTMLElement>('.error-evento')!;
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      errorEl.classList.add('hidden');
+      const datos = Object.fromEntries(new FormData(form).entries());
+      const boton = form.querySelector<HTMLButtonElement>('button[type=submit]')!;
+      boton.disabled = true;
+      try {
+        const res = await fetch('/api/evento', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || !body.ok) {
+          errorEl.textContent = body.error || Object.values(body.errores || {}).join(' ') || 'No pudimos registrar su participación.';
+          errorEl.classList.remove('hidden');
+          boton.disabled = false;
+          return;
+        }
+        document.getElementById('tarjeta-evento')!.innerHTML =
+          '<p class="eyebrow mb-2">¡Listo!</p><h1 class="display mb-2 text-[26px] text-white">Gracias, quedaste registrado</h1><p class="text-[14px] text-mist">Ya estás participando en la rifa. Le escribiremos por correo si resulta ganador.</p>';
+      } catch {
+        errorEl.textContent = 'Sin conexión. Intente de nuevo.';
+        errorEl.classList.remove('hidden');
+        boton.disabled = false;
+      }
+    });
+  }
+  document.addEventListener('DOMContentLoaded', setup);
+</script>
