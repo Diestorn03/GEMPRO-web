@@ -7,17 +7,38 @@
  */
 import PanelBase from './PanelBase.astro';
 
-interface Props { title?: string; seccion?: 'clientes' | 'evento' | 'noticias' }
-const { title, seccion } = Astro.props;
-const activo = (s: string) => (seccion === s ? 'bg-white/10 text-white' : 'text-white/85 hover:text-neon');
+interface Props {
+  title?: string;
+  seccion?: 'clientes' | 'noticias' | 'evento';
+  eyebrow?: string;
+  encabezado?: string;
+  descripcion?: string;
+}
+const { title, seccion, eyebrow, encabezado, descripcion } = Astro.props;
+const secciones = [
+  { id: 'clientes', label: 'Clientes', href: '/panel' },
+  { id: 'noticias', label: 'Noticias', href: '/panel/noticias' },
+  { id: 'evento', label: 'Evento', href: '/panel/evento' },
+];
 ---
 <PanelBase title={title}>
-  <nav slot="nav" class="flex items-center gap-1 text-[13px] font-semibold">
-    <a href="/panel" class={`rounded px-3 py-2 transition-colors ${activo('clientes')}`}>Clientes</a>
-    <a href="/panel/noticias" class={`rounded px-3 py-2 transition-colors ${activo('noticias')}`}>Noticias</a>
-    <a href="/panel/evento" class={`rounded px-3 py-2 transition-colors ${activo('evento')}`}>Evento</a>
-    <a href="/" target="_blank" class="rounded px-3 py-2 text-mist transition-colors hover:text-neon">Sitio público ↗</a>
-    <form method="post" action="/api/salir" data-ajax><button type="submit" class="rounded px-3 py-2 text-mist transition-colors hover:text-neon">Salir</button></form>
+  <nav slot="nav" class="flex flex-wrap items-center gap-1 text-[12px] font-bold uppercase tracking-[0.12em]">
+    {secciones.map((s) => (
+      <a href={s.href} class:list={['relative rounded-[3px] px-3 py-2 transition-colors', seccion === s.id ? 'bg-green text-ink' : 'text-white/80 hover:text-neon']}>{s.label}</a>
+    ))}
+    <a href="/" target="_blank" class="rounded-[3px] px-3 py-2 text-mist transition-colors hover:text-neon">Sitio ↗</a>
+    <form method="post" action="/api/salir" data-ajax><button type="submit" class="rounded-[3px] px-3 py-2 text-mist transition-colors hover:text-neon">Salir</button></form>
   </nav>
+
+  {encabezado && (
+    <section class="mb-10 flex flex-col gap-5 lg:mb-14 lg:flex-row lg:items-end lg:justify-between">
+      <div class="flex max-w-[760px] flex-col gap-3">
+        {eyebrow && <span class="eyebrow" data-reveal="fade">{eyebrow}</span>}
+        <h1 class="display text-[clamp(34px,5vw,56px)] text-white" data-split>{encabezado}</h1>
+        {descripcion && <p class="max-w-[560px] text-[15px] leading-relaxed text-mist lg:text-[16px]" data-reveal data-delay="0.25">{descripcion}</p>}
+      </div>
+      <div class="flex flex-wrap gap-2" data-reveal="fade" data-delay="0.3"><slot name="acciones" /></div>
+    </section>
+  )}
   <slot />
 </PanelBase>

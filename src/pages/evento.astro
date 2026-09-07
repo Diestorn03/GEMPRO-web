@@ -48,7 +48,8 @@ const abierto = eventoAbierto(config);
 <script>
   function setup() {
     const form = document.getElementById('form-evento') as HTMLFormElement | null;
-    if (!form) return;
+    if (!form || form.dataset.listo) return;
+    form.dataset.listo = '1';
     const errorEl = form.querySelector<HTMLElement>('.error-evento')!;
     form.addEventListener('submit', async (ev) => {
       ev.preventDefault();
@@ -74,5 +75,5 @@ const abierto = eventoAbierto(config);
       }
     });
   }
-  document.addEventListener('DOMContentLoaded', setup);
+  document.addEventListener('astro:page-load', setup);
 </script>

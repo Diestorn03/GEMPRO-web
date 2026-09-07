@@ -1,7 +1,9 @@
 ---
+import { Image } from 'astro:assets';
 import PanelBase from '../../layouts/PanelBase.astro';
 import { clienteAutenticado } from '../../lib/auth';
 import { sb } from '../../lib/supabase';
+import fotoFondo from '../../assets/img/hero-slide-4.jpg';
 
 export const prerender = false;
 
@@ -11,14 +13,15 @@ if (!cliente) return new Response('No encontrado', { status: 404 });
 
 const autenticado = clienteAutenticado(Astro.cookies, cliente.id);
 const error = Astro.url.searchParams.get('error');
+const fecha = (iso: string) => new Date(iso).toLocaleDateString('es-VE', { day: 'numeric', month: 'long', year: 'numeric' });
 
-let informes: { id: string; nombre_archivo: string; url: string }[] = [];
+let informes: { id: string; nombre_archivo: string; url: string; subido_en: string }[] = [];
 if (autenticado) {
   const { data } = await sb().from('informes').select('*').eq('cliente_id', cliente.id).order('subido_en', { ascending: false });
   informes = await Promise.all(
     (data ?? []).map(async (inf) => {
       const { data: firmada } = await sb().storage.from('informes-tecnicos').createSignedUrl(inf.ruta_storage, 300);
-      return { id: inf.id, nombre_archivo: inf.nombre_archivo, url: firmada?.signedUrl ?? '' };
+      return { id: inf.id, nombre_archivo: inf.nombre_archivo, url: firmada?.signedUrl ?? '', subido_en: inf.subido_en };
     })
   );
 }
@@ -26,33 +29,47 @@ if (autenticado) {
 <PanelBase title={cliente.nombre_empresa}>
   <nav slot="nav"></nav>
   {!autenticado ? (
-    <div class="mx-auto flex max-w-sm flex-col gap-5 rounded-md border border-white/10 bg-panel p-8">
-      <div>
-        <p class="eyebrow mb-1">Portal de {cliente.nombre_empresa}</p>
-        <h1 class="display text-[24px] text-white">Ingresa tu contraseña</h1>
+    <section class="relative -mx-6 -my-10 isolate overflow-hidden lg:-my-14" data-parallax-scope>
+      <div class="absolute inset-0 -z-20" data-parallax="10">
+        <Image src={fotoFondo} alt="" widths={[768, 1280, 1920]} sizes="100vw" class="h-full w-full object-cover" loading="eager" />
       </div>
-      {error === '1' && <p class="rounded border border-amber/40 bg-amber/10 px-3 py-2 text-[13px] text-amber" role="alert">Contraseña incorrecta.</p>}
-      <form method="post" action="/api/c/entrar" data-ajax class="flex flex-col gap-4">
-        <input type="hidden" name="token" value={token} />
-        <div>
-          <label for="password" class="mb-1.5 block text-[13px] font-semibold text-white">Contraseña</label>
-          <input id="password" name="password" type="password" required autofocus class="field" />
-        </div>
-        <button type="submit" class="btn-primary">Entrar</button>
-      </form>
-    </div>
+      <div class="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(6,20,38,.97)_0%,rgba(6,20,38,.88)_45%,rgba(6,20,38,.6)_100%)]" aria-hidden="true"></div>
+      <div class="container-x flex min-h-[calc(100dvh-73px)] items-center py-16">
+        <form method="post" action="/api/c/entrar" data-ajax data-reveal="up" class="w-full max-w-md rounded-md border border-white/15 bg-white/[0.06] p-8 backdrop-blur-xl lg:p-10">
+          <input type="hidden" name="token" value={token} />
+          <span class="eyebrow">Portal de {cliente.nombre_empresa}</span>
+          <h1 class="display mt-3 text-[clamp(28px,4vw,38px)] text-white" data-split>Sus informes técnicos</h1>
+          <p class="mb-7 mt-2 text-[14px] text-fog">Ingrese la contraseña que le compartió GEMPRO.</p>
+          {error === '1' && <p class="mb-4 rounded border border-amber/40 bg-amber/10 px-3 py-2 text-[13px] text-amber" role="alert">Contraseña incorrecta.</p>}
+          <label for="password" class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Contraseña</label>
+          <input id="password" name="password" type="password" required autofocus class="field mb-5" />
+          <button type="submit" class="btn-primary h-[54px] w-full" data-magnetic>Entrar</button>
+        </form>
+      </div>
+    </section>
   ) : (
-    <div class="mx-auto max-w-2xl">
-      <p class="eyebrow mb-1">Portal de {cliente.nombre_empresa}</p>
-      <h1 class="display mb-8 text-[28px] text-white">Sus informes técnicos</h1>
-      <div class="grid gap-2.5">
+    <div class="mx-auto max-w-3xl">
+      <div class="mb-10 flex flex-col gap-3">
+        <span class="eyebrow" data-reveal="fade">Portal de {cliente.nombre_empresa}</span>
+        <h1 class="display text-[clamp(32px,5vw,52px)] text-white" data-split>Sus informes técnicos</h1>
+        <p class="text-[15px] text-mist" data-reveal data-delay="0.25">{informes.length} documento{informes.length === 1 ? '' : 's'} disponible{informes.length === 1 ? '' : 's'} para descargar.</p>
+      </div>
+      <div class="grid gap-3" data-reveal-group data-stagger="0.07">
         {informes.map((inf) => (
-          <a href={inf.url} class="flex items-center justify-between gap-3 rounded-md border border-white/10 bg-panel px-5 py-4 transition-colors hover:border-neon/50">
-            <span class="min-w-0 truncate text-[15px] text-white">{inf.nombre_archivo}</span>
-            <span class="shrink-0 text-[13px] font-bold uppercase tracking-[0.08em] text-neon">Descargar</span>
+          <a href={inf.url} class="group flex items-center justify-between gap-4 rounded-md border border-white/10 bg-panel px-5 py-4 transition-[border-color,transform] duration-500 hover:-translate-y-0.5 hover:border-neon/50">
+            <div class="flex min-w-0 items-center gap-4">
+              <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded bg-white/5 text-neon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /></svg>
+              </span>
+              <div class="min-w-0">
+                <p class="truncate text-[15px] font-semibold text-white">{inf.nombre_archivo}</p>
+                <p class="font-mono text-[12px] text-mist">{fecha(inf.subido_en)}</p>
+              </div>
+            </div>
+            <span class="shrink-0 text-[12px] font-bold uppercase tracking-[0.1em] text-neon transition-transform group-hover:translate-x-1">Descargar ↓</span>
           </a>
         ))}
-        {informes.length === 0 && <p class="rounded-md border border-white/10 bg-panel p-10 text-center text-mist">Todavía no hay informes para descargar.</p>}
+        {informes.length === 0 && <p class="rounded-md border border-dashed border-white/15 p-10 text-center text-mist">Todavía no hay informes para descargar.</p>}
       </div>
     </div>
   )}

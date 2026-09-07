@@ -7,53 +7,72 @@ export const prerender = false;
 
 if (!estaAutenticado(Astro.cookies)) return Astro.redirect('/entrar', 303);
 
-const { data: clientes } = await sb().from('clientes').select('*').order('creado_en', { ascending: false });
+const [{ data: clientes }, { count: totalInformes }, { count: totalNoticias }, { count: totalRegistros }] = await Promise.all([
+  sb().from('clientes').select('*').order('creado_en', { ascending: false }),
+  sb().from('informes').select('*', { count: 'exact', head: true }),
+  sb().from('noticias').select('*', { count: 'exact', head: true }),
+  sb().from('registro_evento').select('*', { count: 'exact', head: true }),
+]);
 const error = Astro.url.searchParams.get('error');
 const nuevo = Astro.url.searchParams.get('nuevo');
 const base = Astro.url.origin;
+const cifras = [
+  { n: clientes?.length ?? 0, label: 'clientes en el portal' },
+  { n: totalInformes ?? 0, label: 'informes técnicos entregados' },
+  { n: totalNoticias ?? 0, label: 'noticias publicadas' },
+  { n: totalRegistros ?? 0, label: 'registros del evento' },
+];
 ---
-<Panel title="Clientes" seccion="clientes">
-  <div class="mb-8 flex flex-wrap items-end justify-between gap-4" data-reveal="fade">
-    <div>
-      <p class="eyebrow mb-1">Portal de clientes</p>
-      <h1 class="display text-[32px] text-white">{clientes?.length ?? 0} cliente{clientes?.length === 1 ? '' : 's'}</h1>
-    </div>
+<Panel title="Clientes" seccion="clientes" eyebrow="Portal de clientes" encabezado="Cada cliente, su carpeta." descripcion="Crea el acceso de un cliente, comparte su link y su contraseña, y sube sus informes técnicos. Él entra y descarga solo los suyos.">
+  <a slot="acciones" href="#nuevo-cliente" class="btn-primary px-5 py-3 text-[13px]">＋ Nuevo cliente</a>
+
+  <div class="mb-10 grid grid-cols-2 gap-3 lg:grid-cols-4" data-reveal-group data-stagger="0.08">
+    {cifras.map((c) => (
+      <div class="rounded-md border border-white/10 bg-panel p-5">
+        <span class="display block text-[40px] leading-none text-neon tabular-nums lg:text-[52px]" data-count={c.n}>{c.n}</span>
+        <span class="mt-2 block text-[12px] font-semibold uppercase tracking-[0.1em] text-mist">{c.label}</span>
+      </div>
+    ))}
   </div>
 
-  <form method="post" action="/api/panel/clientes" data-ajax data-reveal class="mb-8 grid gap-4 rounded-md border border-white/10 bg-panel p-6 sm:grid-cols-2">
-    <h2 class="display text-[20px] text-white sm:col-span-2">Nuevo cliente</h2>
+  <form id="nuevo-cliente" method="post" action="/api/panel/clientes" data-ajax data-reveal class="mb-10 grid scroll-mt-28 gap-4 rounded-md border border-white/10 bg-panel p-6 sm:grid-cols-2 lg:p-8">
+    <div class="sm:col-span-2">
+      <span class="eyebrow">Nuevo cliente</span>
+      <h2 class="display mt-2 text-[24px] text-white">Crear acceso</h2>
+    </div>
     {error === '1' && <p class="text-[13px] text-amber sm:col-span-2" role="alert">Falta el nombre de la empresa o la contraseña es muy corta (mínimo 4 caracteres).</p>}
     <div>
-      <label class="mb-1.5 block text-[13px] font-semibold text-white">Empresa</label>
+      <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Empresa</label>
       <input name="nombre_empresa" required class="field" placeholder="Nombre de la empresa" />
     </div>
     <div>
-      <label class="mb-1.5 block text-[13px] font-semibold text-white">Contacto (opcional)</label>
-      <input name="contacto" class="field" placeholder="Nombre de la persona de contacto" />
+      <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Contacto (opcional)</label>
+      <input name="contacto" class="field" placeholder="Persona de contacto" />
     </div>
     <div class="sm:col-span-2">
-      <label class="mb-1.5 block text-[13px] font-semibold text-white">Contraseña para este cliente</label>
+      <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Contraseña para este cliente</label>
       <input name="password" required minlength={4} class="field" placeholder="La que le van a compartir junto con el link" />
     </div>
-    <button type="submit" class="btn-primary self-start sm:col-span-2">Crear cliente</button>
+    <button type="submit" class="btn-primary self-start sm:col-span-2" data-magnetic>Crear cliente</button>
   </form>
 
-  {nuevo === '1' && <p class="mb-6 rounded border border-neon/40 bg-neon/10 px-4 py-3 text-[14px] text-white">Cliente creado. Copia su link de abajo y compártelo junto con la contraseña que le pusiste.</p>}
+  {nuevo === '1' && <p class="mb-6 rounded-md border border-neon/40 bg-neon/10 px-4 py-3 text-[14px] text-white" data-reveal="fade">Cliente creado. Copia su link de abajo y compártelo junto con la contraseña que le pusiste.</p>}
 
-  <div class="mb-5" data-reveal="fade">
-    <input id="buscador-clientes" type="search" class="field max-w-sm" placeholder="Buscar cliente por nombre…" aria-label="Buscar cliente" />
+  <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" data-reveal="fade">
+    <span class="eyebrow">Historial por cliente</span>
+    <input id="buscador-clientes" type="search" class="field sm:max-w-sm" placeholder="Buscar cliente por nombre…" aria-label="Buscar cliente" />
   </div>
 
   <div id="lista-clientes" class="grid gap-3" data-reveal-group data-stagger="0.06">
     {(clientes ?? []).map((c) => (
-      <div class="fila-cliente flex flex-col gap-3 rounded-md border border-white/10 bg-panel p-5 sm:flex-row sm:items-center sm:justify-between" data-nombre={c.nombre_empresa.toLowerCase()}>
+      <div class="fila-cliente group flex flex-col gap-3 rounded-md border border-white/10 bg-panel p-5 transition-[border-color,transform] duration-500 hover:-translate-y-0.5 hover:border-neon/50 sm:flex-row sm:items-center sm:justify-between" data-nombre={c.nombre_empresa.toLowerCase()}>
         <div class="min-w-0">
-          <p class="truncate text-[16px] font-semibold text-white">{c.nombre_empresa}</p>
+          <p class="truncate text-[17px] font-semibold text-white">{c.nombre_empresa}</p>
           {c.contacto && <p class="text-[13px] text-mist">{c.contacto}</p>}
-          <p class="mt-1 font-mono text-[12px] text-neon">{base}/c/{c.token}</p>
+          <p class="mt-1 truncate font-mono text-[12px] text-neon">{base}/c/{c.token}</p>
         </div>
         <div class="flex shrink-0 gap-2">
-          <a href={`/panel/${c.id}`} class="btn-ghost border border-white/15 px-4 py-2 text-[13px]">Historial de informes</a>
+          <a href={`/panel/${c.id}`} class="btn-ghost border border-white/15 px-4 py-2 text-[13px] transition-colors group-hover:border-neon/50">Historial de informes</a>
           <form method="post" action="/api/panel/clientes" data-ajax data-confirmar="¿Eliminar este cliente y sus informes?">
             <input type="hidden" name="_accion" value="eliminar" />
             <input type="hidden" name="id" value={c.id} />
@@ -64,7 +83,7 @@ const base = Astro.url.origin;
     ))}
   </div>
   <p id="sin-resultados" class="hidden rounded-md border border-white/10 bg-panel p-10 text-center text-mist">Ningún cliente coincide con esa búsqueda.</p>
-  {(clientes ?? []).length === 0 && <p class="rounded-md border border-white/10 bg-panel p-10 text-center text-mist">Todavía no hay clientes en el portal.</p>}
+  {(clientes ?? []).length === 0 && <p class="rounded-md border border-dashed border-white/15 p-10 text-center text-mist" data-reveal="fade">Todavía no hay clientes. Crea el primero con el formulario de arriba.</p>}
 </Panel>
 
 <script>
@@ -86,6 +105,4 @@ const base = Astro.url.origin;
     });
   }
   document.addEventListener('astro:page-load', setup);
-  document.addEventListener('DOMContentLoaded', setup);
-  if (document.readyState !== 'loading') setup();
 </script>

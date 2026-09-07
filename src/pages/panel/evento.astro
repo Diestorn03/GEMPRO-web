@@ -14,72 +14,73 @@ const { count } = await sb().from('registro_evento').select('*', { count: 'exact
 const guardado = Astro.url.searchParams.get('guardado');
 
 const urlEvento = `${Astro.url.origin}/evento`;
-const qrDataUrl = await QRCode.toDataURL(urlEvento, { width: 320, margin: 2, color: { dark: '#061426', light: '#ffffff' } });
+const qrDataUrl = await QRCode.toDataURL(urlEvento, { width: 640, margin: 2, color: { dark: '#061426', light: '#ffffff' } });
 
 const aFecha = (iso: string | null) => (iso ? new Date(iso).toISOString().slice(0, 16) : '');
 const forzarActual = config?.forzar_abierto === true ? 'abierto' : config?.forzar_abierto === false ? 'cerrado' : 'auto';
+const abierto = eventoAbierto(config);
 ---
-<Panel title="Evento" seccion="evento">
-  <div class="mb-8" data-reveal="fade">
-    <p class="eyebrow mb-1">Registro por QR</p>
-    <h1 class="display text-[32px] text-white">Evento</h1>
-  </div>
+<Panel title="Evento" seccion="evento" eyebrow="Registro por QR" encabezado="El evento, con un código." descripcion="La gente escanea el QR, deja nombre, correo y teléfono, y queda en la lista para la rifa y para futuras comunicaciones de GEMPRO.">
+  <span slot="acciones" class:list={['inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[12px] font-bold uppercase tracking-[0.1em]', abierto ? 'border-neon/50 text-neon' : 'border-amber/50 text-amber']}>
+    <span class:list={['h-2 w-2 rounded-full', abierto ? 'bg-neon' : 'bg-amber']} aria-hidden="true"></span>{abierto ? 'Registro abierto' : 'Registro cerrado'}
+  </span>
 
-  {guardado === '1' && <p class="mb-6 rounded border border-neon/40 bg-neon/10 px-4 py-3 text-[14px] text-white">Configuración guardada.</p>}
+  {guardado === '1' && <p class="mb-6 rounded-md border border-neon/40 bg-neon/10 px-4 py-3 text-[14px] text-white" data-reveal="fade">Configuración guardada.</p>}
 
-  <div class="grid min-w-0 gap-6 lg:grid-cols-[1fr_320px]" data-reveal-group data-stagger="0.08">
+  <div class="grid min-w-0 gap-6 lg:grid-cols-[1fr_340px]" data-reveal-group data-stagger="0.1">
     <div class="grid min-w-0 gap-6">
-      <form method="post" action="/api/panel/evento" data-ajax class="grid min-w-0 gap-4 rounded-md border border-white/10 bg-panel p-6 sm:grid-cols-2">
-        <h2 class="display text-[20px] text-white sm:col-span-2">Fechas y control manual</h2>
+      <form method="post" action="/api/panel/evento" data-ajax class="grid min-w-0 gap-4 rounded-md border border-white/10 bg-panel p-6 sm:grid-cols-2 lg:p-8">
+        <div class="sm:col-span-2"><span class="eyebrow">Apertura y cierre</span><h2 class="display mt-2 text-[24px] text-white">Fechas y control manual</h2></div>
         <div class="min-w-0">
-          <label class="mb-1.5 block text-[13px] font-semibold text-white">Abre</label>
+          <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Abre</label>
           <input type="datetime-local" name="inicio" value={aFecha(config?.inicio ?? null)} class="field w-full min-w-0" />
         </div>
         <div class="min-w-0">
-          <label class="mb-1.5 block text-[13px] font-semibold text-white">Cierra</label>
+          <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Cierra</label>
           <input type="datetime-local" name="fin" value={aFecha(config?.fin ?? null)} class="field w-full min-w-0" />
         </div>
         <div class="sm:col-span-2">
-          <label class="mb-1.5 block text-[13px] font-semibold text-white">Interruptor manual</label>
+          <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Interruptor manual</label>
           <select name="forzar" class="field">
             <option value="auto" selected={forzarActual === 'auto'}>Automático según las fechas de arriba</option>
             <option value="abierto" selected={forzarActual === 'abierto'}>Forzar abierto (ignora las fechas)</option>
             <option value="cerrado" selected={forzarActual === 'cerrado'}>Forzar cerrado (ignora las fechas)</option>
           </select>
         </div>
-        <p class="text-[13px] text-mist sm:col-span-2">
-          Estado actual: <strong class={eventoAbierto(config) ? 'text-neon' : 'text-amber'}>{eventoAbierto(config) ? 'Abierto' : 'Cerrado'}</strong>
-        </p>
-        <button type="submit" class="btn-primary self-start sm:col-span-2">Guardar</button>
+        <button type="submit" class="btn-primary self-start sm:col-span-2" data-magnetic>Guardar</button>
       </form>
 
-      <div class="rounded-md border border-white/10 bg-panel p-6">
-        <div class="mb-4 flex items-center justify-between">
-          <h2 class="display text-[20px] text-white">{count ?? 0} registro{count === 1 ? '' : 's'}</h2>
+      <div class="rounded-md border border-white/10 bg-panel p-6 lg:p-8">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <span class="eyebrow">Participantes</span>
+            <h2 class="display mt-1 text-[40px] leading-none text-neon tabular-nums" data-count={count ?? 0}>{count ?? 0}</h2>
+          </div>
           <div class="flex gap-2">
             <button type="button" id="btn-csv" class="btn-ghost border border-white/15 px-4 py-2 text-[13px]">Exportar CSV</button>
-            <button type="button" id="btn-ganador" class="btn-ghost border border-white/15 px-4 py-2 text-[13px]">Elegir ganador</button>
+            <button type="button" id="btn-ganador" class="btn-primary px-4 py-2 text-[13px]">Elegir ganador</button>
           </div>
         </div>
-        <p id="resultado-ganador" class="hidden rounded border border-neon/40 bg-neon/10 px-4 py-3 text-[14px] text-white"></p>
+        <p id="resultado-ganador" class="hidden rounded-md border border-neon/40 bg-neon/10 px-4 py-3 text-[15px] text-white"></p>
       </div>
     </div>
 
     <div class="flex flex-col items-center gap-3 rounded-md border border-white/10 bg-panel p-6">
-      <p class="eyebrow self-start">Código QR</p>
+      <span class="eyebrow self-start">Código QR</span>
       <img src={qrDataUrl} alt="QR del registro del evento" class="w-full max-w-[320px] rounded" />
       <p class="break-all text-center font-mono text-[12px] text-neon">{urlEvento}</p>
-      <a href={qrDataUrl} download="qr-evento-gempro.png" class="btn-ghost w-full border border-white/15 text-center text-[13px]">Descargar QR</a>
+      <a href={qrDataUrl} download="qr-evento-gempro.png" class="btn-ghost w-full border border-white/15 text-center text-[13px]">Descargar QR para imprimir</a>
     </div>
   </div>
 </Panel>
 
 <script>
   function setup() {
-    const btnCsv = document.getElementById('btn-csv');
-    const btnGanador = document.getElementById('btn-ganador');
+    const btnCsv = document.getElementById('btn-csv') as HTMLButtonElement | null;
+    const btnGanador = document.getElementById('btn-ganador') as HTMLButtonElement | null;
     const resultado = document.getElementById('resultado-ganador');
-    if (!btnCsv || !btnGanador || !resultado) return;
+    if (!btnCsv || !btnGanador || !resultado || btnCsv.dataset.listo) return;
+    btnCsv.dataset.listo = '1';
 
     async function traerRegistros() {
       const res = await fetch('/api/panel/evento');
@@ -101,9 +102,9 @@ const forzarActual = config?.forzar_abierto === true ? 'abierto' : config?.forza
       const registros = await traerRegistros();
       if (!registros.length) { resultado.textContent = 'Todavía no hay registros.'; resultado.classList.remove('hidden'); return; }
       const ganador = registros[Math.floor(Math.random() * registros.length)];
-      resultado.textContent = `Ganador: ${ganador.nombre} — ${ganador.correo}`;
+      resultado.textContent = `🎉 Ganador: ${ganador.nombre} — ${ganador.correo}`;
       resultado.classList.remove('hidden');
     });
   }
-  document.addEventListener('DOMContentLoaded', setup);
+  document.addEventListener('astro:page-load', setup);
 </script>
