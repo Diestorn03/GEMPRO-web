@@ -1,0 +1,77 @@
+---
+import Panel from '../../layouts/Panel.astro';
+import { estaAutenticado } from '../../lib/auth';
+import { sb } from '../../lib/supabase';
+
+export const prerender = false;
+
+if (!estaAutenticado(Astro.cookies)) return Astro.redirect('/entrar', 303);
+
+const { data: noticias } = await sb().from('noticias').select('*').order('creado_en', { ascending: false });
+const editarId = Astro.url.searchParams.get('editar');
+const nueva = Astro.url.searchParams.get('nueva');
+const error = Astro.url.searchParams.get('error');
+const editando = editarId ? (noticias ?? []).find((n) => n.id === editarId) : null;
+const mostrarForm = Boolean(editando || nueva || (noticias ?? []).length === 0);
+const fecha = (iso: string) => new Date(iso).toLocaleDateString('es-VE', { day: 'numeric', month: 'long', year: 'numeric' });
+---
+<Panel title="Noticias" seccion="noticias">
+  <div class="mb-8 flex flex-wrap items-end justify-between gap-4" data-reveal="fade">
+    <div>
+      <p class="eyebrow mb-1">Blog</p>
+      <h1 class="display text-[32px] text-white">{(noticias ?? []).length} noticia{(noticias ?? []).length === 1 ? '' : 's'}</h1>
+    </div>
+    <div class="flex gap-2">
+      <a href="/noticias" target="_blank" class="btn-ghost border border-white/15 text-[13px]">Ver como visitante ↗</a>
+      {!mostrarForm && <a href="/panel/noticias?nueva=1" class="btn-primary text-[13px]">＋ Nueva noticia</a>}
+    </div>
+  </div>
+
+  {mostrarForm && (
+    <form method="post" action="/api/panel/noticias" enctype="multipart/form-data" data-ajax data-reveal class="mb-8 grid gap-4 rounded-md border border-white/10 bg-panel p-6">
+      <h2 class="display text-[20px] text-white">{editando ? 'Editar noticia' : 'Nueva noticia'}</h2>
+      {error === '1' && <p class="text-[13px] text-amber" role="alert">Falta el título o el contenido.</p>}
+      {editando && <input type="hidden" name="id" value={editando.id} />}
+      <input type="hidden" name="imagen_actual" value={editando?.imagen_url ?? ''} />
+      <div>
+        <label class="mb-1.5 block text-[13px] font-semibold text-white">Título</label>
+        <input name="titulo" required class="field" placeholder="Título de la noticia" value={editando?.titulo} />
+      </div>
+      <div>
+        <label class="mb-1.5 block text-[13px] font-semibold text-white">Artículo</label>
+        <textarea name="contenido" required rows={8} class="field" placeholder="Escriba el artículo completo">{editando?.contenido}</textarea>
+      </div>
+      <div>
+        <label class="mb-1.5 block text-[13px] font-semibold text-white">Foto {editando?.imagen_url && '(suba otra para cambiarla)'}</label>
+        <input type="file" name="imagen" accept="image/*" class="field text-[13px]" />
+        {editando?.imagen_url && <img src={editando.imagen_url} alt="" class="mt-2 h-24 w-auto rounded object-cover" />}
+      </div>
+      <label class="flex items-center gap-2 text-[14px] text-white"><input type="checkbox" name="publicado" checked={editando ? editando.publicado : true} class="h-4 w-4 accent-neon" /> Visible en el sitio público</label>
+      <div class="flex gap-2">
+        <button type="submit" class="btn-primary">Guardar</button>
+        <a href="/panel/noticias" class="btn-ghost border border-white/15">Cancelar</a>
+      </div>
+    </form>
+  )}
+
+  <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-reveal-group data-stagger="0.06">
+    {(noticias ?? []).map((n) => (
+      <div class="flex flex-col overflow-hidden rounded-md border border-white/10 bg-panel">
+        {n.imagen_url && <img src={n.imagen_url} alt="" class="h-32 w-full object-cover" />}
+        <div class="flex flex-1 flex-col gap-2 p-4">
+          <p class="truncate text-[15px] font-semibold text-white">{n.titulo}</p>
+          <p class="font-mono text-[12px] text-mist">{fecha(n.creado_en)}{!n.publicado && ' · oculta'}</p>
+          <div class="mt-auto flex gap-2 pt-2 text-[13px]">
+            <a href={`/panel/noticias?editar=${n.id}`} class="btn-ghost border border-white/15 px-3 py-1.5">Editar</a>
+            <form method="post" action="/api/panel/noticias" data-ajax data-confirmar="¿Eliminar esta noticia?">
+              <input type="hidden" name="_accion" value="eliminar" />
+              <input type="hidden" name="id" value={n.id} />
+              <input type="hidden" name="imagen_url" value={n.imagen_url ?? ''} />
+              <button type="submit" class="btn-ghost border border-white/15 px-3 py-1.5 text-amber">Eliminar</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+</Panel>

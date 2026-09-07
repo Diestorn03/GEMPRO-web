@@ -19,15 +19,15 @@ const qrDataUrl = await QRCode.toDataURL(urlEvento, { width: 320, margin: 2, col
 const aFecha = (iso: string | null) => (iso ? new Date(iso).toISOString().slice(0, 16) : '');
 const forzarActual = config?.forzar_abierto === true ? 'abierto' : config?.forzar_abierto === false ? 'cerrado' : 'auto';
 ---
-<Panel title="Evento">
-  <div class="mb-8">
+<Panel title="Evento" seccion="evento">
+  <div class="mb-8" data-reveal="fade">
     <p class="eyebrow mb-1">Registro por QR</p>
     <h1 class="display text-[32px] text-white">Evento</h1>
   </div>
 
   {guardado === '1' && <p class="mb-6 rounded border border-neon/40 bg-neon/10 px-4 py-3 text-[14px] text-white">Configuración guardada.</p>}
 
-  <div class="grid min-w-0 gap-6 lg:grid-cols-[1fr_320px]">
+  <div class="grid min-w-0 gap-6 lg:grid-cols-[1fr_320px]" data-reveal-group data-stagger="0.08">
     <div class="grid min-w-0 gap-6">
       <form method="post" action="/api/panel/evento" data-ajax class="grid min-w-0 gap-4 rounded-md border border-white/10 bg-panel p-6 sm:grid-cols-2">
         <h2 class="display text-[20px] text-white sm:col-span-2">Fechas y control manual</h2>

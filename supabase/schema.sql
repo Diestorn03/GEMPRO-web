@@ -63,3 +63,21 @@ alter table informes enable row level security;
 insert into storage.buckets (id, name, public) values ('informes-tecnicos', 'informes-tecnicos', false);
 -- Sin políticas de storage para el rol anon: todo acceso (subir, listar, descargar) pasa por
 -- rutas del servidor con la service_role key, que evita RLS por diseño.
+
+-- Noticias (Fase 4): CMS simple, sin comentarios ni reacciones. GEMPRO publica desde /panel/noticias.
+create table noticias (
+  id uuid primary key default gen_random_uuid(),
+  titulo text not null,
+  contenido text not null,
+  imagen_url text,
+  publicado boolean not null default true,
+  creado_en timestamptz not null default now()
+);
+alter table noticias enable row level security;
+-- La página pública se sirve desde el servidor con la service_role key (evita RLS), pero se
+-- deja esta política de lectura por si alguna vez se consulta directo con la clave anon.
+create policy "noticias públicas visibles para todos" on noticias for select using (publicado = true);
+
+-- Bucket público para las fotos de las noticias (a diferencia de informes-tecnicos: estas SÍ
+-- deben verse en la web pública, igual que el bucket "archivos" de Kindra).
+insert into storage.buckets (id, name, public) values ('noticias-imagenes', 'noticias-imagenes', true);

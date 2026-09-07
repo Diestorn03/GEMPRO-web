@@ -171,30 +171,9 @@ export const productos = [
   },
 ];
 
-/** Página /noticias: contenido propio de GEMPRO sobre sus áreas de trabajo (no anuncios de terceros). */
-export const noticias = [
-  {
-    id: 'que-es-mantenimiento-predictivo',
-    tag: 'Predictivo', fecha: '[FECHA]',
-    title: '¿Qué es el mantenimiento predictivo y por qué su planta lo necesita?',
-    extracto: 'Medir la condición de un equipo antes de que falle cambia el costo de una reparación: de una parada no planificada a una intervención programada.',
-    href: withBase('/servicios#predictivo'),
-  },
-  {
-    id: 'senales-de-desalineacion',
-    tag: 'Proactivo', fecha: '[FECHA]',
-    title: 'Cinco señales de que un eje está desalineado (y por qué vuelve a fallar)',
-    extracto: 'La vibración vuelve, el rodamiento se recalienta, el acople se desgasta antes de tiempo. La causa casi siempre está en el montaje, no en la pieza.',
-    href: withBase('/servicios#proactivo'),
-  },
-  {
-    id: 'plan-mantenimiento-rcm',
-    tag: 'Preventivo', fecha: '[FECHA]',
-    title: 'Cómo armar un plan de mantenimiento por criticidad, no por calendario',
-    extracto: 'No todos los equipos merecen la misma frecuencia de inspección. RCM prioriza según qué tan crítico es cada activo para la operación.',
-    href: withBase('/servicios#preventivo'),
-  },
-];
+// Las noticias ya no viven aquí: son un CMS en Supabase (tabla `noticias`), editable desde
+// /panel/noticias. Los tres artículos originales quedan en supabase/seed-noticias.sql como
+// contenido inicial opcional.
 
 export const contact = {
   title: ['Cuéntenos qué máquina', 'le quita el sueño.'],

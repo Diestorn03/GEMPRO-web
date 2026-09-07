@@ -2,10 +2,16 @@
 import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import Contact from '../components/Contact.astro';
-import { noticias } from '../data/site';
+import { sb } from '../lib/supabase';
 import fotoNoticias from '../assets/img/hero-slide-3.jpg';
+
+export const prerender = false;
+
+const { data: noticias } = await sb().from('noticias').select('*').eq('publicado', true).order('creado_en', { ascending: false });
+const fecha = (iso: string) => new Date(iso).toLocaleDateString('es-VE', { day: 'numeric', month: 'long', year: 'numeric' });
+const extracto = (texto: string) => (texto.length > 160 ? texto.slice(0, 160).trimEnd() + '…' : texto);
 ---
-<Base title="Noticias" description="Artículos técnicos de GEMPRO sobre mantenimiento predictivo, proactivo y preventivo, escritos por el mismo equipo que hace el diagnóstico en planta.">
+<Base title="Noticias" description="Artículos de GEMPRO sobre mantenimiento predictivo, proactivo y preventivo, escritos por el mismo equipo que hace el diagnóstico en planta.">
   <section class="relative isolate overflow-hidden bg-ink pb-16 pt-36 lg:pb-20 lg:pt-52" data-parallax-scope>
     <div class="absolute inset-0 -z-20" data-parallax="12">
       <Image src={fotoNoticias} alt="" widths={[768, 1280, 1920]} sizes="100vw" class="h-full w-full object-cover" loading="eager" />
@@ -18,20 +24,31 @@ import fotoNoticias from '../assets/img/hero-slide-3.jpg';
     </div>
   </section>
 
-  <section class="container-x grid gap-5 py-16 sm:grid-cols-2 lg:grid-cols-3 lg:py-24" data-reveal-group data-stagger="0.1">
-    {noticias.map((n) => (
-      <a href={n.href} class="group flex flex-col gap-3 rounded-md border border-white/10 bg-panel p-6 transition-[border-color,transform] duration-500 hover:-translate-y-1.5 hover:border-neon/50">
-        <div class="flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.14em] text-neon">
-          <span>{n.tag}</span><span class="text-mist">·</span><span class="text-mist">{n.fecha}</span>
-        </div>
-        <h2 class="display text-[22px] text-white">{n.title}</h2>
-        <p class="text-[14px] leading-relaxed text-mist">{n.extracto}</p>
-        <span class="mt-1 inline-flex items-center gap-2 text-[13px] font-bold uppercase tracking-[0.08em] text-white transition-colors group-hover:text-neon">
-          Leer más
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="transition-transform group-hover:translate-x-1"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-        </span>
-      </a>
-    ))}
+  <section class="container-x py-16 lg:py-24">
+    {(noticias ?? []).length === 0 ? (
+      <p class="text-center text-mist" data-reveal="fade">Pronto vamos a publicar aquí.</p>
+    ) : (
+      <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" data-reveal-group data-stagger="0.1">
+        {noticias!.map((n) => (
+          <a href={`/noticias/${n.id}`} class="group flex flex-col overflow-hidden rounded-md border border-white/10 bg-panel transition-[border-color,transform] duration-500 hover:-translate-y-1.5 hover:border-neon/50">
+            {n.imagen_url && (
+              <div class="h-[180px] overflow-hidden">
+                <img src={n.imagen_url} alt="" class="h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-105" loading="lazy" />
+              </div>
+            )}
+            <div class="flex flex-1 flex-col gap-3 p-6">
+              <span class="font-mono text-[11px] uppercase tracking-[0.14em] text-neon">{fecha(n.creado_en)}</span>
+              <h2 class="display text-[22px] text-white">{n.titulo}</h2>
+              <p class="text-[14px] leading-relaxed text-mist">{extracto(n.contenido)}</p>
+              <span class="mt-auto inline-flex items-center gap-2 pt-1 text-[13px] font-bold uppercase tracking-[0.08em] text-white transition-colors group-hover:text-neon">
+                Leer más
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="transition-transform group-hover:translate-x-1"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+              </span>
+            </div>
+          </a>
+        ))}
+      </div>
+    )}
   </section>
 
   <Contact />

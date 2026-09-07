@@ -13,13 +13,17 @@ if (!cliente) return Astro.redirect('/panel', 303);
 
 const { data: informes } = await sb().from('informes').select('*').eq('cliente_id', id).order('subido_en', { ascending: false });
 const base = Astro.url.origin;
+const fecha = (iso: string) => new Date(iso).toLocaleDateString('es-VE', { day: 'numeric', month: 'long', year: 'numeric' });
 ---
-<Panel title={cliente.nombre_empresa}>
+<Panel title={cliente.nombre_empresa} seccion="clientes">
   <a href="/panel" class="mb-4 inline-block text-[13px] text-mist hover:text-neon">← Clientes</a>
-  <h1 class="display mb-1 text-[32px] text-white">{cliente.nombre_empresa}</h1>
-  <p class="mb-8 font-mono text-[13px] text-neon">{base}/c/{cliente.token}</p>
+  <div data-reveal="fade">
+    <p class="eyebrow mb-1">Historial de informes</p>
+    <h1 class="display mb-1 text-[32px] text-white">{cliente.nombre_empresa}</h1>
+    <p class="mb-8 font-mono text-[13px] text-neon">{base}/c/{cliente.token}</p>
+  </div>
 
-  <form method="post" action="/api/panel/informes" enctype="multipart/form-data" data-ajax class="mb-8 flex flex-col gap-3 rounded-md border border-white/10 bg-panel p-6 sm:flex-row sm:items-end">
+  <form method="post" action="/api/panel/informes" enctype="multipart/form-data" data-ajax data-reveal class="mb-8 flex flex-col gap-3 rounded-md border border-white/10 bg-panel p-6 sm:flex-row sm:items-end">
     <input type="hidden" name="cliente_id" value={cliente.id} />
     <div class="flex-1">
       <label class="mb-1.5 block text-[13px] font-semibold text-white">Subir informes técnicos</label>
@@ -28,11 +32,14 @@ const base = Astro.url.origin;
     <button type="submit" class="btn-primary whitespace-nowrap">Subir</button>
   </form>
 
-  <div class="grid gap-2.5">
+  <div class="grid gap-2.5" data-reveal-group data-stagger="0.05">
     {(informes ?? []).map((inf) => (
       <div class="flex items-center justify-between gap-3 rounded-md border border-white/10 bg-panel px-5 py-3.5">
-        <span class="min-w-0 truncate text-[14px] text-white">{inf.nombre_archivo}</span>
-        <form method="post" action="/api/panel/informes" data-ajax>
+        <div class="min-w-0">
+          <p class="truncate text-[14px] text-white">{inf.nombre_archivo}</p>
+          <p class="font-mono text-[12px] text-mist">Subido el {fecha(inf.subido_en)}</p>
+        </div>
+        <form method="post" action="/api/panel/informes" data-ajax class="shrink-0">
           <input type="hidden" name="_accion" value="eliminar" />
           <input type="hidden" name="cliente_id" value={cliente.id} />
           <input type="hidden" name="id" value={inf.id} />

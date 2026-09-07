@@ -12,15 +12,15 @@ const error = Astro.url.searchParams.get('error');
 const nuevo = Astro.url.searchParams.get('nuevo');
 const base = Astro.url.origin;
 ---
-<Panel title="Clientes">
-  <div class="mb-8 flex flex-wrap items-end justify-between gap-4">
+<Panel title="Clientes" seccion="clientes">
+  <div class="mb-8 flex flex-wrap items-end justify-between gap-4" data-reveal="fade">
     <div>
       <p class="eyebrow mb-1">Portal de clientes</p>
       <h1 class="display text-[32px] text-white">{clientes?.length ?? 0} cliente{clientes?.length === 1 ? '' : 's'}</h1>
     </div>
   </div>
 
-  <form method="post" action="/api/panel/clientes" data-ajax class="mb-8 grid gap-4 rounded-md border border-white/10 bg-panel p-6 sm:grid-cols-2">
+  <form method="post" action="/api/panel/clientes" data-ajax data-reveal class="mb-8 grid gap-4 rounded-md border border-white/10 bg-panel p-6 sm:grid-cols-2">
     <h2 class="display text-[20px] text-white sm:col-span-2">Nuevo cliente</h2>
     {error === '1' && <p class="text-[13px] text-amber sm:col-span-2" role="alert">Falta el nombre de la empresa o la contraseña es muy corta (mínimo 4 caracteres).</p>}
     <div>
@@ -40,16 +40,20 @@ const base = Astro.url.origin;
 
   {nuevo === '1' && <p class="mb-6 rounded border border-neon/40 bg-neon/10 px-4 py-3 text-[14px] text-white">Cliente creado. Copia su link de abajo y compártelo junto con la contraseña que le pusiste.</p>}
 
-  <div class="grid gap-3">
+  <div class="mb-5" data-reveal="fade">
+    <input id="buscador-clientes" type="search" class="field max-w-sm" placeholder="Buscar cliente por nombre…" aria-label="Buscar cliente" />
+  </div>
+
+  <div id="lista-clientes" class="grid gap-3" data-reveal-group data-stagger="0.06">
     {(clientes ?? []).map((c) => (
-      <div class="flex flex-col gap-3 rounded-md border border-white/10 bg-panel p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div class="fila-cliente flex flex-col gap-3 rounded-md border border-white/10 bg-panel p-5 sm:flex-row sm:items-center sm:justify-between" data-nombre={c.nombre_empresa.toLowerCase()}>
         <div class="min-w-0">
           <p class="truncate text-[16px] font-semibold text-white">{c.nombre_empresa}</p>
           {c.contacto && <p class="text-[13px] text-mist">{c.contacto}</p>}
           <p class="mt-1 font-mono text-[12px] text-neon">{base}/c/{c.token}</p>
         </div>
         <div class="flex shrink-0 gap-2">
-          <a href={`/panel/${c.id}`} class="btn-ghost border border-white/15 px-4 py-2 text-[13px]">Informes</a>
+          <a href={`/panel/${c.id}`} class="btn-ghost border border-white/15 px-4 py-2 text-[13px]">Historial de informes</a>
           <form method="post" action="/api/panel/clientes" data-ajax data-confirmar="¿Eliminar este cliente y sus informes?">
             <input type="hidden" name="_accion" value="eliminar" />
             <input type="hidden" name="id" value={c.id} />
@@ -58,6 +62,30 @@ const base = Astro.url.origin;
         </div>
       </div>
     ))}
-    {(clientes ?? []).length === 0 && <p class="rounded-md border border-white/10 bg-panel p-10 text-center text-mist">Todavía no hay clientes en el portal.</p>}
   </div>
+  <p id="sin-resultados" class="hidden rounded-md border border-white/10 bg-panel p-10 text-center text-mist">Ningún cliente coincide con esa búsqueda.</p>
+  {(clientes ?? []).length === 0 && <p class="rounded-md border border-white/10 bg-panel p-10 text-center text-mist">Todavía no hay clientes en el portal.</p>}
 </Panel>
+
+<script>
+  function setup() {
+    const buscador = document.getElementById('buscador-clientes') as HTMLInputElement | null;
+    const lista = document.getElementById('lista-clientes');
+    const sinResultados = document.getElementById('sin-resultados');
+    if (!buscador || !lista || buscador.dataset.listo) return;
+    buscador.dataset.listo = '1';
+    buscador.addEventListener('input', () => {
+      const q = buscador.value.trim().toLowerCase();
+      let visibles = 0;
+      lista.querySelectorAll<HTMLElement>('.fila-cliente').forEach((fila) => {
+        const coincide = !q || (fila.dataset.nombre || '').includes(q);
+        fila.hidden = !coincide;
+        if (coincide) visibles++;
+      });
+      sinResultados?.classList.toggle('hidden', visibles !== 0 || !q);
+    });
+  }
+  document.addEventListener('astro:page-load', setup);
+  document.addEventListener('DOMContentLoaded', setup);
+  if (document.readyState !== 'loading') setup();
+</script>

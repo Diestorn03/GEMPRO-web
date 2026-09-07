@@ -1,0 +1,37 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../../layouts/Base.astro';
+import Contact from '../../components/Contact.astro';
+import { sb } from '../../lib/supabase';
+import fotoNoticias from '../../assets/img/hero-slide-3.jpg';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+const { data: noticia } = await sb().from('noticias').select('*').eq('id', id).eq('publicado', true).maybeSingle();
+if (!noticia) return new Response('No encontrado', { status: 404 });
+
+const fecha = new Date(noticia.creado_en).toLocaleDateString('es-VE', { day: 'numeric', month: 'long', year: 'numeric' });
+const parrafos = noticia.contenido.split('\n').map((p: string) => p.trim()).filter(Boolean);
+---
+<Base title={noticia.titulo} description={noticia.contenido.slice(0, 160)}>
+  <section class="relative isolate overflow-hidden bg-ink pb-16 pt-36 lg:pb-20 lg:pt-52" data-parallax-scope>
+    <div class="absolute inset-0 -z-20" data-parallax="12">
+      {noticia.imagen_url ? <img src={noticia.imagen_url} alt="" class="h-full w-full object-cover" /> : <Image src={fotoNoticias} alt="" widths={[768, 1280, 1920]} sizes="100vw" class="h-full w-full object-cover" loading="eager" />}
+    </div>
+    <div class="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(6,20,38,.96)_0%,rgba(6,20,38,.82)_55%,rgba(6,20,38,.55)_100%)]" aria-hidden="true"></div>
+    <div class="container-x flex flex-col gap-4">
+      <a href="/noticias" class="w-fit text-[13px] font-semibold text-fog hover:text-neon" data-reveal="fade">← Noticias</a>
+      <span class="eyebrow" data-reveal="fade">{fecha}</span>
+      <h1 class="display max-w-[900px] text-[clamp(32px,6vw,64px)] text-white" data-split>{noticia.titulo}</h1>
+    </div>
+  </section>
+
+  <section class="container-x max-w-[720px] py-16 lg:py-24">
+    <div class="flex flex-col gap-5" data-reveal-group data-stagger="0.06">
+      {parrafos.map((p: string) => <p class="text-[17px] leading-relaxed text-fog">{p}</p>)}
+    </div>
+  </section>
+
+  <Contact />
+</Base>
