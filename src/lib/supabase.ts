@@ -6,8 +6,11 @@ let cliente: SupabaseClient | null = null;
  *  usa la service_role key, que puede saltarse RLS, y nunca debe llegar al navegador. */
 export function sb(): SupabaseClient {
   if (!cliente) {
-    const url = process.env.SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_KEY;
+    // import.meta.env: en rutas de servidor, Astro lo respalda con process.env leído en cada
+    // solicitud (no solo al compilar), así que funciona igual en local (.env) y en Vercel
+    // (variables puestas en el panel, sin volver a desplegar).
+    const url = import.meta.env.SUPABASE_URL || process.env.SUPABASE_URL;
+    const key = import.meta.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_KEY;
     if (!url || !key) throw new Error('Faltan SUPABASE_URL / SUPABASE_SERVICE_KEY');
     cliente = createClient(url, key, { auth: { persistSession: false } });
   }

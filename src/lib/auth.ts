@@ -12,7 +12,7 @@ import type { AstroCookies } from 'astro';
 export const COOKIE = 'gp_sesion';
 
 function secreto(): string {
-  const s = process.env.AUTH_SECRET || '';
+  const s = (import.meta.env.AUTH_SECRET || process.env.AUTH_SECRET) || '';
   return s.length >= 16 ? s : '';
 }
 
@@ -26,7 +26,7 @@ function igual(a: string, b: string): boolean {
 }
 
 export function contrasenaCorrecta(intento: string): boolean {
-  const real = process.env.ADMIN_PASSWORD || '';
+  const real = (import.meta.env.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD) || '';
   if (!secreto() || !real) return false;
   return igual(intento, real);
 }
