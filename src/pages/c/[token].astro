@@ -19,12 +19,9 @@ const fecha = (iso: string) => new Date(iso).toLocaleDateString('es-VE', { day: 
 let informes: { id: string; nombre_archivo: string; url: string; subido_en: string }[] = [];
 if (autenticado) {
   const { data } = await sb().from('informes').select('*').eq('cliente_id', cliente.id).order('subido_en', { ascending: false });
-  informes = await Promise.all(
-    (data ?? []).map(async (inf) => {
-      const { data: firmada } = await sb().storage.from('informes-tecnicos').createSignedUrl(inf.ruta_storage, 300);
-      return { id: inf.id, nombre_archivo: inf.nombre_archivo, url: firmada?.signedUrl ?? '', subido_en: inf.subido_en };
-    })
-  );
+  // Una sola llamada a Storage firma todas las URL (antes era una por informe, en serie de red).
+  const { data: firmadas } = data?.length ? await sb().storage.from('informes-tecnicos').createSignedUrls(data.map((i) => i.ruta_storage), 300) : { data: [] as { signedUrl: string }[] };
+  informes = (data ?? []).map((inf, i) => ({ id: inf.id, nombre_archivo: inf.nombre_archivo, url: firmadas?.[i]?.signedUrl ?? '', subido_en: inf.subido_en }));
 }
 ---
 <PanelBase title={cliente.nombre_empresa}>

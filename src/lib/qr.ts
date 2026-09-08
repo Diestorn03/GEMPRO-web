@@ -67,6 +67,14 @@ export async function qrSvg(url: string, estilo: EstiloQr = 'gempro', px = 1200)
     `<rect width="${lado}" height="${lado}" fill="#fff"/><g fill="${relleno}">${cuerpo}</g>${ojos}${logo}</svg>`;
 }
 
+const cachePng = new Map<string, Promise<Buffer>>();
+/** Vista previa del panel: se genera una vez por proceso y se reutiliza (la URL del evento no cambia). */
+export function qrPngCacheado(url: string, estilo: EstiloQr = 'gempro', ancho = 480): Promise<Buffer> {
+  const k = `${estilo}|${ancho}|${url}`;
+  if (!cachePng.has(k)) cachePng.set(k, qrPng(url, estilo, ancho));
+  return cachePng.get(k)!;
+}
+
 /** PNG cuadrado de `ancho` píxeles (2400 ≈ 20 cm a 300 dpi), rasterizado desde el SVG. */
 export async function qrPng(url: string, estilo: EstiloQr = 'gempro', ancho = 2400): Promise<Buffer> {
   return sharp(Buffer.from(await qrSvg(url, estilo, ancho))).png().toBuffer();

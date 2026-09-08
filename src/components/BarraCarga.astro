@@ -1,0 +1,26 @@
+---
+/**
+ * Barra de progreso fina arriba del todo mientras el router de cliente trae la siguiente
+ * página. Con View Transitions el navegador no muestra su propia rueda de carga, así que entre el
+ * clic y el cambio de página no había ninguna señal y parecía que el sitio no respondía.
+ */
+---
+<div id="barra-carga" aria-hidden="true"></div>
+<style is:global>
+  #barra-carga { position: fixed; top: 0; left: 0; z-index: 9999; height: 3px; width: 0; background: linear-gradient(90deg, #28af60, #5ee39a); opacity: 0; pointer-events: none; transition: width 0.3s ease, opacity 0.25s ease; }
+  html.cargando #barra-carga { opacity: 1; width: 85%; transition: width 8s cubic-bezier(0.08, 0.6, 0.1, 1), opacity 0.1s; }
+  html.cargado #barra-carga { width: 100%; opacity: 0; transition: width 0.15s ease, opacity 0.3s ease 0.2s; }
+</style>
+<script is:inline>
+  (function () {
+    var html = document.documentElement, activa = false, t;
+    document.addEventListener('astro:before-preparation', function () { activa = true; clearTimeout(t); html.classList.remove('cargado'); html.classList.add('cargando'); });
+    document.addEventListener('astro:page-load', function () {
+      if (!activa) return;
+      activa = false;
+      html.classList.remove('cargando');
+      html.classList.add('cargado');
+      t = setTimeout(function () { html.classList.remove('cargado'); }, 600);
+    });
+  })();
+</script>

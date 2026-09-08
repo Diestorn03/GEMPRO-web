@@ -8,10 +8,11 @@ export const prerender = false;
 if (!estaAutenticado(Astro.cookies)) return Astro.redirect('/entrar', 303);
 
 const { id } = Astro.params;
-const { data: cliente } = await sb().from('clientes').select('*').eq('id', id).maybeSingle();
+const [{ data: cliente }, { data: informes }] = await Promise.all([
+  sb().from('clientes').select('*').eq('id', id).maybeSingle(),
+  sb().from('informes').select('*').eq('cliente_id', id).order('subido_en', { ascending: false }),
+]);
 if (!cliente) return Astro.redirect('/panel', 303);
-
-const { data: informes } = await sb().from('informes').select('*').eq('cliente_id', id).order('subido_en', { ascending: false });
 const base = Astro.url.origin;
 const fecha = (iso: string) => new Date(iso).toLocaleDateString('es-VE', { day: 'numeric', month: 'long', year: 'numeric' });
 ---

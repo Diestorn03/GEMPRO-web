@@ -14,19 +14,22 @@ import archivoWoff2 from '@fontsource-variable/archivo/files/archivo-latin-wdth-
 import { Image } from 'astro:assets';
 import logoBlanco from '../assets/logos/logo-gempro-blanco.png';
 import { site } from '../data/site';
+import BarraCarga from '../components/BarraCarga.astro';
 
 interface Props { title?: string }
 const { title } = Astro.props;
 const fullTitle = title ? `${title} · ${site.name}` : site.name;
 ---
 <!doctype html>
-<html lang="es" class="js">
+<html lang="es" class="js" data-scroll-nativo>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
     <title>{fullTitle}</title>
     <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="preload" href={archivoWoff2} as="font" type="font/woff2" crossorigin />
     <meta name="theme-color" content="#061426" />
     <script is:inline>
@@ -35,6 +38,7 @@ const fullTitle = title ? `${title} · ${site.name}` : site.name;
     <ClientRouter />
   </head>
   <body class="min-h-dvh bg-ink">
+    <BarraCarga />
     <!-- Fondo: malla técnica muy sutil, como la del sitio -->
     <div class="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,rgba(40,175,96,.08),transparent_55%)]" aria-hidden="true"></div>
     <div class="pointer-events-none fixed inset-0 -z-10 opacity-[.35] [background-image:linear-gradient(rgba(255,255,255,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.035)_1px,transparent_1px)] [background-size:48px_48px]" aria-hidden="true"></div>
@@ -76,8 +80,8 @@ const fullTitle = title ? `${title} · ${site.name}` : site.name;
         const boton = form.querySelector<HTMLButtonElement>('button[type=submit]');
         if (boton) { boton.disabled = true; boton.dataset.texto = boton.textContent || ''; boton.textContent = 'Un momento…'; }
         try {
-          const res = await fetch(form.action, { method: form.method || 'post', body: new FormData(form) });
-          location.href = res.url;
+          const res = await fetch(form.action, { method: form.method || 'post', body: new FormData(form), headers: { 'X-Peticion-Ajax': '1' } });
+          location.href = res.headers.get('X-Redirigir') || res.url;
         } catch {
           if (boton) { boton.disabled = false; boton.textContent = boton.dataset.texto || 'Enviar'; }
           alert('No se pudo procesar la solicitud. Intenta de nuevo.');

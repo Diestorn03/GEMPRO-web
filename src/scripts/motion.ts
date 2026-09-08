@@ -25,7 +25,8 @@ let tickerFn: ((time: number) => void) | null = null;
 const prefersReduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function setupLenis() {
-  if (lenis || prefersReduced()) return;
+  // data-scroll-nativo (el panel): desplazamiento nativo del navegador; el suavizado es para el sitio de mercadeo.
+  if (lenis || prefersReduced() || document.documentElement.hasAttribute('data-scroll-nativo')) return;
   lenis = new Lenis({ lerp: 0.11, smoothWheel: true, wheelMultiplier: 0.95 });
   lenis.on('scroll', ScrollTrigger.update);
   tickerFn = (time) => lenis?.raf(time * 1000);

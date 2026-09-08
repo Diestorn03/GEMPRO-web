@@ -7,6 +7,10 @@ import fotoNoticias from '../../assets/img/hero-slide-3.jpg';
 
 export const prerender = false;
 
+// Caché en el CDN de Vercel: se sirve al instante como una página estática y se regenera como
+// mucho cada minuto, así un cambio desde el panel tarda a lo sumo un minuto en verse.
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=600');
+
 const { id } = Astro.params;
 const { data: noticia } = await sb().from('noticias').select('*').eq('id', id).eq('publicado', true).maybeSingle();
 if (!noticia) return new Response('No encontrado', { status: 404 });
