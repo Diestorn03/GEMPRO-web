@@ -1,8 +1,12 @@
 ---
-/** Página del evento con QR: sin enlace en el menú, solo se llega escaneando el código. */
+/** Página del evento con QR: sin enlace en el menú, solo se llega escaneando el código.
+ *  Misma puesta en escena que el acceso del panel (foto, degradado, tarjeta con blur y
+ *  animaciones de entrada) para que quien escanee vea la marca, no un formulario suelto. */
+import { Image } from 'astro:assets';
 import PanelBase from '../layouts/PanelBase.astro';
 import { sb } from '../lib/supabase';
 import { eventoAbierto } from '../lib/evento';
+import fotoFondo from '../assets/img/hero-slide-3.jpg';
 
 export const prerender = false;
 
@@ -11,38 +15,44 @@ const abierto = eventoAbierto(config);
 ---
 <PanelBase title="Registro del evento">
   <nav slot="nav"></nav>
-  <div class="mx-auto max-w-md py-10">
-    {abierto ? (
-      <div id="tarjeta-evento" class="rounded-md border border-white/10 bg-panel p-8">
-        <p class="eyebrow mb-2">GEMPRO en el evento</p>
-        <h1 class="display mb-2 text-[28px] text-white">Regístrate y participa</h1>
-        <p class="mb-6 text-[14px] text-mist">Deja tus datos para entrar a la rifa y recibir novedades de GEMPRO.</p>
-        <form id="form-evento" class="flex flex-col gap-4" novalidate>
-          <div>
-            <label class="mb-1.5 block text-[13px] font-semibold text-white">Nombre</label>
-            <input name="nombre" required minlength="2" class="field" placeholder="Su nombre" />
-          </div>
-          <div>
-            <label class="mb-1.5 block text-[13px] font-semibold text-white">Correo</label>
-            <input name="correo" type="email" required class="field" placeholder="nombre@correo.com" />
-          </div>
-          <div>
-            <label class="mb-1.5 block text-[13px] font-semibold text-white">Teléfono (opcional)</label>
-            <input name="telefono" type="tel" class="field" placeholder="+58" />
-          </div>
-          <div class="absolute -left-[9999px]" aria-hidden="true"><label>No rellenar <input type="text" name="empresa_web" tabindex="-1" autocomplete="off" /></label></div>
-          <p class="error-evento hidden text-[13px] text-amber" role="alert"></p>
-          <button type="submit" class="btn-primary">Registrarme</button>
-        </form>
-      </div>
-    ) : (
-      <div class="rounded-md border border-white/10 bg-panel p-8 text-center">
-        <p class="eyebrow mb-2">GEMPRO</p>
-        <h1 class="display mb-2 text-[24px] text-white">El registro no está disponible</h1>
-        <p class="text-[14px] text-mist">El registro del evento no está activo en este momento.</p>
-      </div>
-    )}
-  </div>
+  <section class="relative -mx-6 -my-10 isolate overflow-hidden lg:-my-14" data-parallax-scope>
+    <div class="absolute inset-0 -z-20" data-parallax="10">
+      <Image src={fotoFondo} alt="" widths={[768, 1280, 1920]} sizes="100vw" class="h-full w-full object-cover" loading="eager" />
+    </div>
+    <div class="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(6,20,38,.97)_0%,rgba(6,20,38,.88)_45%,rgba(6,20,38,.6)_100%)]" aria-hidden="true"></div>
+    <div class="container-x flex min-h-[calc(100dvh-73px)] items-center py-16">
+      {abierto ? (
+        <div id="tarjeta-evento" data-reveal="up" class="w-full max-w-md rounded-md border border-white/15 bg-white/[0.06] p-8 backdrop-blur-xl lg:p-10">
+          <span class="eyebrow">GEMPRO en el evento</span>
+          <h1 class="display mt-3 text-[clamp(28px,4vw,38px)] text-white" data-split>Regístrate y participa</h1>
+          <p class="mb-7 mt-2 text-[14px] text-fog">Deja tus datos para entrar a la rifa y recibir novedades de GEMPRO.</p>
+          <form id="form-evento" class="flex flex-col gap-4" novalidate>
+            <div>
+              <label for="ev-nombre" class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Nombre</label>
+              <input id="ev-nombre" name="nombre" required minlength="2" autocomplete="name" class="field" placeholder="Su nombre" />
+            </div>
+            <div>
+              <label for="ev-correo" class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Correo</label>
+              <input id="ev-correo" name="correo" type="email" required autocomplete="email" class="field" placeholder="nombre@correo.com" />
+            </div>
+            <div>
+              <label for="ev-telefono" class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Teléfono (opcional)</label>
+              <input id="ev-telefono" name="telefono" type="tel" autocomplete="tel" class="field" placeholder="+58" />
+            </div>
+            <div class="absolute -left-[9999px]" aria-hidden="true"><label>No rellenar <input type="text" name="empresa_web" tabindex="-1" autocomplete="off" /></label></div>
+            <p class="error-evento hidden rounded border border-amber/40 bg-amber/10 px-3 py-2 text-[13px] text-amber" role="alert"></p>
+            <button type="submit" class="btn-primary h-[54px] w-full" data-magnetic>Registrarme</button>
+          </form>
+        </div>
+      ) : (
+        <div data-reveal="up" class="w-full max-w-md rounded-md border border-white/15 bg-white/[0.06] p-8 backdrop-blur-xl lg:p-10">
+          <span class="eyebrow">GEMPRO</span>
+          <h1 class="display mt-3 text-[clamp(26px,4vw,34px)] text-white" data-split>El registro no está disponible</h1>
+          <p class="mt-2 text-[14px] text-fog">El registro del evento no está activo en este momento. Visite <a href="/" class="text-neon hover:underline">gempro.com.ve</a> para conocer nuestros servicios.</p>
+        </div>
+      )}
+    </div>
+  </section>
 </PanelBase>
 
 <script>
@@ -67,7 +77,7 @@ const abierto = eventoAbierto(config);
           return;
         }
         document.getElementById('tarjeta-evento')!.innerHTML =
-          '<p class="eyebrow mb-2">¡Listo!</p><h1 class="display mb-2 text-[26px] text-white">Gracias, quedaste registrado</h1><p class="text-[14px] text-mist">Ya estás participando en la rifa. Le escribiremos por correo si resulta ganador.</p>';
+          '<span class="eyebrow">¡Listo!</span><h1 class="display mt-3 text-[clamp(26px,4vw,34px)] text-white">Gracias, quedaste registrado</h1><p class="mt-2 text-[14px] text-fog">Ya estás participando en la rifa. Le escribiremos por correo si resulta ganador.</p>';
       } catch {
         errorEl.textContent = 'Sin conexión. Intente de nuevo.';
         errorEl.classList.remove('hidden');

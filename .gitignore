@@ -9,3 +9,4 @@ data/mensajes.json
 capturas/
 server.log
 .vercel/
+.qr-prueba/

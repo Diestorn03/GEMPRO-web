@@ -8,13 +8,17 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sb } from '../../lib/supabase';
+import { bloqueado, ipDe, registrarIntento } from '../../lib/limite';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
 
 const clean = (v: unknown, max = 500) => String(v ?? '').trim().slice(0, max);
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async (ctx) => {
+  const { request } = ctx;
+  const ip = ipDe(ctx);
+  if (await bloqueado(ip, 'contacto', 10, 60)) return json({ ok: false, error: 'Demasiados mensajes desde esta conexión. Intente más tarde o escríbanos por WhatsApp.' }, 429);
   let data: Record<string, unknown> = {};
   const type = request.headers.get('content-type') || '';
   try {
@@ -42,6 +46,7 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     const { error } = await sb().from('mensajes').insert({ nombre, empresa: empresa || null, correo, telefono: telefono || null, mensaje });
     if (error) throw error;
+    await registrarIntento(ip, 'contacto');
   } catch (err) {
     console.error('[contacto] no se pudo guardar el mensaje', err);
     return json({ ok: false, error: 'No pudimos registrar su mensaje. Escríbanos por WhatsApp.' }, 500);

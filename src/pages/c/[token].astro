@@ -13,6 +13,7 @@ if (!cliente) return new Response('No encontrado', { status: 404 });
 
 const autenticado = clienteAutenticado(Astro.cookies, cliente.id);
 const error = Astro.url.searchParams.get('error');
+const mensajeError = error === '2' ? 'Demasiados intentos. Espere 15 minutos e intente de nuevo.' : error ? 'Contraseña incorrecta.' : '';
 const fecha = (iso: string) => new Date(iso).toLocaleDateString('es-VE', { day: 'numeric', month: 'long', year: 'numeric' });
 
 let informes: { id: string; nombre_archivo: string; url: string; subido_en: string }[] = [];
@@ -40,7 +41,7 @@ if (autenticado) {
           <span class="eyebrow">Portal de {cliente.nombre_empresa}</span>
           <h1 class="display mt-3 text-[clamp(28px,4vw,38px)] text-white" data-split>Sus informes técnicos</h1>
           <p class="mb-7 mt-2 text-[14px] text-fog">Ingrese la contraseña que le compartió GEMPRO.</p>
-          {error === '1' && <p class="mb-4 rounded border border-amber/40 bg-amber/10 px-3 py-2 text-[13px] text-amber" role="alert">Contraseña incorrecta.</p>}
+          {mensajeError && <p class="mb-4 rounded border border-amber/40 bg-amber/10 px-3 py-2 text-[13px] text-amber" role="alert">{mensajeError}</p>}
           <label for="password" class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Contraseña</label>
           <input id="password" name="password" type="password" required autofocus class="field mb-5" />
           <button type="submit" class="btn-primary h-[54px] w-full" data-magnetic>Entrar</button>

@@ -29,18 +29,18 @@ const fecha = (iso: string) => new Date(iso).toLocaleDateString('es-VE', { day: 
       <input type="hidden" name="imagen_actual" value={editando?.imagen_url ?? ''} />
       <div class="grid gap-4">
         <div>
-          <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Título</label>
-          <input name="titulo" required class="field text-[18px] font-semibold" placeholder="Título de la noticia" value={editando?.titulo} />
+          <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog" for="titulo">Título</label>
+          <input name="titulo" id="titulo" required class="field text-[18px] font-semibold" placeholder="Título de la noticia" value={editando?.titulo} />
         </div>
         <div>
-          <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Artículo</label>
-          <textarea name="contenido" required rows={12} class="field leading-relaxed" placeholder="Escriba el artículo completo. Deje una línea en blanco entre párrafos.">{editando?.contenido}</textarea>
+          <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog" for="contenido">Artículo</label>
+          <textarea name="contenido" id="contenido" required rows={12} class="field leading-relaxed" placeholder="Escriba el artículo completo. Deje una línea en blanco entre párrafos.">{editando?.contenido}</textarea>
         </div>
       </div>
       <div class="grid content-start gap-4">
         <div>
-          <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Foto {editando?.imagen_url && '(suba otra para cambiarla)'}</label>
-          <input type="file" name="imagen" accept="image/*" class="field text-[13px]" />
+          <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog" for="imagen">Foto {editando?.imagen_url && '(suba otra para cambiarla)'}</label>
+          <input type="file" name="imagen" id="imagen" accept="image/*" class="field text-[13px]" />
           {editando?.imagen_url && <img src={editando.imagen_url} alt="" class="mt-3 aspect-[16/10] w-full rounded object-cover" />}
         </div>
         <label class="flex items-center gap-2 text-[14px] text-white"><input type="checkbox" name="publicado" checked={editando ? editando.publicado : true} class="h-4 w-4 accent-neon" /> Visible en el sitio público</label>

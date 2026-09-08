@@ -29,8 +29,8 @@ const fecha = (iso: string) => new Date(iso).toLocaleDateString('es-VE', { day: 
   <form method="post" action="/api/panel/informes" enctype="multipart/form-data" data-ajax data-reveal data-delay="0.1" class="mb-10 flex flex-col gap-3 rounded-md border border-white/10 bg-panel p-6 sm:flex-row sm:items-end lg:p-8">
     <input type="hidden" name="cliente_id" value={cliente.id} />
     <div class="flex-1">
-      <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Subir informes técnicos (uno o varios)</label>
-      <input type="file" name="archivos" multiple class="field text-[13px]" />
+      <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog" for="archivos">Subir informes técnicos (uno o varios)</label>
+      <input type="file" name="archivos" id="archivos" multiple class="field text-[13px]" />
     </div>
     <button type="submit" class="btn-primary whitespace-nowrap" data-magnetic>Subir</button>
   </form>

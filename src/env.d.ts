@@ -9,3 +9,6 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+/** Vite: importar una imagen con ?inline la incrusta como data URI (usado por lib/qr.ts en el servidor). */
+declare module '*.png?inline' { const src: string; export default src; }

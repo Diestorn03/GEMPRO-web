@@ -80,6 +80,25 @@ panel/portal cuando existan) — nunca se expone al navegador.
 3. Deploy. Cada `git push` a `main` publica solo. Cuando GEMPRO tenga su dominio propio, se
    agrega como dominio personalizado de este mismo proyecto — un solo lugar que apuntar.
 
+## Panel privado, portal de clientes, noticias y evento
+
+Todo vive en este mismo proyecto como rutas renderizadas en el servidor (`export const prerender = false`) sobre el mismo Supabase.
+
+| Ruta | Qué es |
+|---|---|
+| `/entrar` | Acceso del equipo de GEMPRO con `ADMIN_PASSWORD`. Sesión de 30 días en cookie firmada (`gp_sesion`). |
+| `/panel` | Clientes: crear acceso (link + contraseña de mínimo 8 caracteres), buscador e historial de informes por cliente. |
+| `/panel/[id]` | Subir y borrar los informes técnicos de un cliente (bucket privado `informes-tecnicos`, hasta 20 MB por archivo). |
+| `/panel/noticias` | CMS mínimo: título, artículo, foto (bucket público `noticias-imagenes`, hasta 5 MB), visible u oculta. |
+| `/panel/evento` | Fechas de apertura y cierre, interruptor manual, contador, CSV, ganador al azar y QR con el isotipo al centro (PNG 2400 px y SVG). |
+| `/c/[token]` | Portal de un cliente: pide su contraseña y lista sus informes con enlaces firmados de 5 minutos. |
+| `/evento` | Registro público por QR (nombre, correo, teléfono). Cerrado por defecto. |
+| `/api/salud` | Diagnóstico: qué variables llegaron, si la base responde y si existe la tabla del límite de intentos. |
+
+Seguridad: contraseñas de clientes con hash y sal; cookies `HttpOnly`, `Secure` y `SameSite=Lax` con vencimiento firmado dentro del valor; comprobación de origen de Astro en todos los POST; límite de intentos por IP en `/api/entrar`, `/api/c/entrar`, `/api/evento` y `/api/contacto` (tabla `intentos_acceso`, ver `supabase/fase5-limite.sql`); cabeceras de seguridad y `Cache-Control: no-store` en las rutas privadas (`src/middleware.ts`); RLS activo y la `service_role` key solo en el servidor.
+
+Scripts: `node scripts/generar-isotipo.mjs` recorta el isotipo del logo maestro para el QR; `node scripts/probar-qr.mjs` verifica con un decodificador que el QR con logo se lee en PNG, PNG degradado y SVG.
+
 ## Antes de publicar
 
 1. **Datos entre corchetes** en `src/data/site.ts`, `Training.astro` y `Contact.astro`: fechas de cursos, horario de atención, RIF.

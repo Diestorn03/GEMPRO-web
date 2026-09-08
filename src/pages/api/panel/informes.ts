@@ -23,6 +23,10 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     return volver;
   }
 
+  // Sin cliente válido no se sube nada: evitaría archivos huérfanos en Storage con un insert que luego falla.
+  const { data: existe } = await sb().from('clientes').select('id').eq('id', clienteId).maybeSingle();
+  if (!existe) return redirect('/panel', 303);
+
   const archivos = form.getAll('archivos').filter((a): a is File => a instanceof File && a.size > 0);
   for (const archivo of archivos) {
     if (archivo.size > 20 * 1024 * 1024) continue; // 20MB por archivo

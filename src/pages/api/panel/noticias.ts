@@ -33,7 +33,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
 
   let imagenUrl = String(form.get('imagen_actual') ?? '') || null;
   const imagen = form.get('imagen');
-  if (imagen instanceof File && imagen.size > 0 && imagen.type.startsWith('image/')) {
+  if (imagen instanceof File && imagen.size > 0 && imagen.size <= 5 * 1024 * 1024 && imagen.type.startsWith('image/')) {
     const ruta = `${Date.now()}-${imagen.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
     const { error: errSubida } = await sb().storage.from(BUCKET).upload(ruta, imagen, { contentType: imagen.type });
     if (!errSubida) imagenUrl = sb().storage.from(BUCKET).getPublicUrl(ruta).data.publicUrl;

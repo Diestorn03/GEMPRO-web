@@ -40,18 +40,18 @@ const cifras = [
       <span class="eyebrow">Nuevo cliente</span>
       <h2 class="display mt-2 text-[24px] text-white">Crear acceso</h2>
     </div>
-    {error === '1' && <p class="text-[13px] text-amber sm:col-span-2" role="alert">Falta el nombre de la empresa o la contraseña es muy corta (mínimo 4 caracteres).</p>}
+    {error === '1' && <p class="text-[13px] text-amber sm:col-span-2" role="alert">Falta el nombre de la empresa o la contraseña es muy corta (mínimo 8 caracteres).</p>}
     <div>
-      <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Empresa</label>
-      <input name="nombre_empresa" required class="field" placeholder="Nombre de la empresa" />
+      <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog" for="nombre_empresa">Empresa</label>
+      <input name="nombre_empresa" id="nombre_empresa" required class="field" placeholder="Nombre de la empresa" />
     </div>
     <div>
-      <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Contacto (opcional)</label>
-      <input name="contacto" class="field" placeholder="Persona de contacto" />
+      <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog" for="contacto">Contacto (opcional)</label>
+      <input name="contacto" id="contacto" class="field" placeholder="Persona de contacto" />
     </div>
     <div class="sm:col-span-2">
-      <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Contraseña para este cliente</label>
-      <input name="password" required minlength={4} class="field" placeholder="La que le van a compartir junto con el link" />
+      <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog" for="password_cliente">Contraseña para este cliente</label>
+      <input name="password" id="password_cliente" required minlength={8} class="field" placeholder="La que le van a compartir junto con el link" />
     </div>
     <button type="submit" class="btn-primary self-start sm:col-span-2" data-magnetic>Crear cliente</button>
   </form>

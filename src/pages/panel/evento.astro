@@ -1,5 +1,5 @@
 ---
-import QRCode from 'qrcode';
+import { qrPng } from '../../lib/qr';
 import Panel from '../../layouts/Panel.astro';
 import { estaAutenticado } from '../../lib/auth';
 import { sb } from '../../lib/supabase';
@@ -14,7 +14,7 @@ const { count } = await sb().from('registro_evento').select('*', { count: 'exact
 const guardado = Astro.url.searchParams.get('guardado');
 
 const urlEvento = `${Astro.url.origin}/evento`;
-const qrDataUrl = await QRCode.toDataURL(urlEvento, { width: 640, margin: 2, color: { dark: '#061426', light: '#ffffff' } });
+const qrVista = 'data:image/png;base64,' + (await qrPng(urlEvento, 640)).toString('base64');
 
 const aFecha = (iso: string | null) => (iso ? new Date(iso).toISOString().slice(0, 16) : '');
 const forzarActual = config?.forzar_abierto === true ? 'abierto' : config?.forzar_abierto === false ? 'cerrado' : 'auto';
@@ -32,16 +32,16 @@ const abierto = eventoAbierto(config);
       <form method="post" action="/api/panel/evento" data-ajax class="grid min-w-0 gap-4 rounded-md border border-white/10 bg-panel p-6 sm:grid-cols-2 lg:p-8">
         <div class="sm:col-span-2"><span class="eyebrow">Apertura y cierre</span><h2 class="display mt-2 text-[24px] text-white">Fechas y control manual</h2></div>
         <div class="min-w-0">
-          <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Abre</label>
-          <input type="datetime-local" name="inicio" value={aFecha(config?.inicio ?? null)} class="field w-full min-w-0" />
+          <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog" for="inicio">Abre</label>
+          <input type="datetime-local" name="inicio" id="inicio" value={aFecha(config?.inicio ?? null)} class="field w-full min-w-0" />
         </div>
         <div class="min-w-0">
-          <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Cierra</label>
-          <input type="datetime-local" name="fin" value={aFecha(config?.fin ?? null)} class="field w-full min-w-0" />
+          <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog" for="fin">Cierra</label>
+          <input type="datetime-local" name="fin" id="fin" value={aFecha(config?.fin ?? null)} class="field w-full min-w-0" />
         </div>
         <div class="sm:col-span-2">
-          <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Interruptor manual</label>
-          <select name="forzar" class="field">
+          <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog" for="forzar">Interruptor manual</label>
+          <select name="forzar" id="forzar" class="field">
             <option value="auto" selected={forzarActual === 'auto'}>Automático según las fechas de arriba</option>
             <option value="abierto" selected={forzarActual === 'abierto'}>Forzar abierto (ignora las fechas)</option>
             <option value="cerrado" selected={forzarActual === 'cerrado'}>Forzar cerrado (ignora las fechas)</option>
@@ -67,9 +67,11 @@ const abierto = eventoAbierto(config);
 
     <div class="flex flex-col items-center gap-3 rounded-md border border-white/10 bg-panel p-6">
       <span class="eyebrow self-start">Código QR</span>
-      <img src={qrDataUrl} alt="QR del registro del evento" class="w-full max-w-[320px] rounded" />
+      <img src={qrVista} alt="QR del registro del evento con el logo de GEMPRO al centro" class="w-full max-w-[320px] rounded" />
       <p class="break-all text-center font-mono text-[12px] text-neon">{urlEvento}</p>
-      <a href={qrDataUrl} download="qr-evento-gempro.png" class="btn-ghost w-full border border-white/15 text-center text-[13px]">Descargar QR para imprimir</a>
+      <a href="/api/panel/qr?formato=png" class="btn-primary w-full text-center text-[13px]">Descargar PNG para imprimir</a>
+      <a href="/api/panel/qr?formato=svg" class="btn-ghost w-full border border-white/15 text-center text-[13px]">Descargar SVG (imprenta)</a>
+      <p class="text-center text-[12px] leading-relaxed text-mist">PNG de 2400 px (20 cm a 300 dpi) y SVG vectorial para cualquier tamaño. Lleva el logo al centro y se lee igual.</p>
     </div>
   </div>
 </Panel>
