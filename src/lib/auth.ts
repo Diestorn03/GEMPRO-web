@@ -46,9 +46,10 @@ export function opcionesCookie(url: URL) {
 }
 
 export function contrasenaCorrecta(intento: string): boolean {
-  const real = (import.meta.env.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD) || '';
+  // trim: un espacio o salto de línea pegado por accidente en el panel de Vercel no debe dejar fuera al equipo.
+  const real = ((import.meta.env.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD) || '').trim();
   if (!secreto() || !real) return false;
-  return igual(intento, real);
+  return igual(intento.trim(), real);
 }
 
 export function valorCookie(): string {

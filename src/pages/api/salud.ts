@@ -25,6 +25,7 @@ export const GET: APIRoute = async () => {
     supabase_url: Boolean(v('SUPABASE_URL')),
     supabase_service_key: Boolean(v('SUPABASE_SERVICE_KEY')),
     admin_password: Boolean(v('ADMIN_PASSWORD')),
+    admin_password_con_espacios: v('ADMIN_PASSWORD') !== v('ADMIN_PASSWORD').trim(),
     auth_secret_ok: v('AUTH_SECRET').length >= 16,
     base_de_datos,
   };
