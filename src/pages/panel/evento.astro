@@ -14,7 +14,7 @@ const { count } = await sb().from('registro_evento').select('*', { count: 'exact
 const guardado = Astro.url.searchParams.get('guardado');
 
 const urlEvento = `${Astro.url.origin}/evento`;
-const qrVista = 'data:image/png;base64,' + (await qrPng(urlEvento, 640)).toString('base64');
+const qrVista = 'data:image/png;base64,' + (await qrPng(urlEvento, 'gempro', 640)).toString('base64');
 
 const aFecha = (iso: string | null) => (iso ? new Date(iso).toISOString().slice(0, 16) : '');
 const forzarActual = config?.forzar_abierto === true ? 'abierto' : config?.forzar_abierto === false ? 'cerrado' : 'auto';
@@ -69,9 +69,13 @@ const abierto = eventoAbierto(config);
       <span class="eyebrow self-start">Código QR</span>
       <img src={qrVista} alt="QR del registro del evento con el logo de GEMPRO al centro" class="w-full max-w-[320px] rounded" />
       <p class="break-all text-center font-mono text-[12px] text-neon">{urlEvento}</p>
-      <a href="/api/panel/qr?formato=png" class="btn-primary w-full text-center text-[13px]">Descargar PNG para imprimir</a>
-      <a href="/api/panel/qr?formato=svg" class="btn-ghost w-full border border-white/15 text-center text-[13px]">Descargar SVG (imprenta)</a>
-      <p class="text-center text-[12px] leading-relaxed text-mist">PNG de 2400 px (20 cm a 300 dpi) y SVG vectorial para cualquier tamaño. Lleva el logo al centro y se lee igual.</p>
+      <div class="grid w-full grid-cols-2 gap-2">
+        <a href="/api/panel/qr?formato=png&estilo=gempro" class="btn-primary px-3 py-2.5 text-center text-[12px]">PNG estilo GEMPRO</a>
+        <a href="/api/panel/qr?formato=svg&estilo=gempro" class="btn-primary px-3 py-2.5 text-center text-[12px]">SVG estilo GEMPRO</a>
+        <a href="/api/panel/qr?formato=png&estilo=clasico" class="btn-ghost border border-white/15 px-3 py-2.5 text-center text-[12px]">PNG clásico</a>
+        <a href="/api/panel/qr?formato=svg&estilo=clasico" class="btn-ghost border border-white/15 px-3 py-2.5 text-center text-[12px]">SVG clásico</a>
+      </div>
+      <p class="text-center text-[12px] leading-relaxed text-mist">PNG de 2400 px (20 cm a 300 dpi) y SVG vectorial para imprenta a cualquier tamaño. El clásico es la versión de máxima compatibilidad por si algún lector viejo no lee el estilizado.</p>
     </div>
   </div>
 </Panel>
