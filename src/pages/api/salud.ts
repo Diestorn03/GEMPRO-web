@@ -19,9 +19,13 @@ export const GET: APIRoute = async () => {
     const { error } = await sb().from('noticias').select('id', { count: 'exact', head: true });
     base_de_datos = error ? `error: ${error.message}` : 'ok';
   } catch (e) { base_de_datos = `error: ${(e as Error).message}`; }
-  const { error: errLimite } = await sb().from('intentos_acceso').select('id', { count: 'exact', head: true });
+  let limite_intentos = 'sin probar hasta que base_de_datos sea ok';
+  if (base_de_datos === 'ok') {
+    const { error: errLimite } = await sb().from('intentos_acceso').select('id', { count: 'exact', head: true });
+    limite_intentos = errLimite ? 'falta la tabla intentos_acceso: ejecutar supabase/fase5-limite.sql en el SQL Editor de Supabase' : 'ok';
+  }
   const body = {
-    limite_intentos: errLimite ? 'falta la tabla intentos_acceso: ejecutar supabase/fase5-limite.sql en el SQL Editor de Supabase' : 'ok',
+    limite_intentos,
     supabase_url: Boolean(v('SUPABASE_URL')),
     supabase_service_key: Boolean(v('SUPABASE_SERVICE_KEY')),
     admin_password: Boolean(v('ADMIN_PASSWORD')),
