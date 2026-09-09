@@ -1,4 +1,6 @@
-# GEMPRO · sitio web
+| `/api/salud` | Diagnóstico: variables, latencia de la base, tabla de intentos, último latido del cron, migración fase 6 y si las contraseñas guardadas se pueden descifrar. |
+| `/api/latido` | Cron diario de Vercel (`vercel.json`): una escritura real para que Supabase Free no pause el proyecto. || `/panel/evento` | Eventos con historial: evento actual (fechas en hora de Venezuela, interruptor manual, contador, CSV y sorteo), "Nuevo evento", eventos anteriores con CSV/ganador/eliminar, y el QR permanente en dos estilos (PNG 2400 px y SVG). || `/panel` | Clientes: crear acceso (link + contraseña de mínimo 8 caracteres), buscador e historial de informes por cliente. |
+| `/panel/[id]` | Contraseña del cliente visible (cifrada con AUTH_SECRET), "Copiar link y contraseña" listo para WhatsApp, cambio de contraseña (cierra sus sesiones) y subida de informes directa a Storage: el servidor firma la URL, el navegador hace el PUT con progreso y luego registra la fila. Hasta 20 MB por archivo (por la función de Vercel solo pasarían 4,5 MB). |# GEMPRO · sitio web
 
 Rediseño de [gempro.com.ve](https://gempro.com.ve) en dirección "sala de control": portada cinematográfica, tipografía Archivo extendida, verde de marca como acento, animaciones de entrada en cada sección y formulario funcional.
 
@@ -88,7 +90,6 @@ Todo vive en este mismo proyecto como rutas renderizadas en el servidor (`export
 |---|---|
 | `/entrar` | Acceso del equipo de GEMPRO con `ADMIN_PASSWORD`. Sesión de 30 días en cookie firmada (`gp_sesion`). |
 | `/panel` | Clientes: crear acceso (link + contraseña de mínimo 8 caracteres), buscador e historial de informes por cliente. |
-| `/panel/[id]` | Subir y borrar los informes técnicos de un cliente (bucket privado `informes-tecnicos`, hasta 20 MB por archivo). |
 | `/panel/noticias` | CMS mínimo: título, artículo, foto (bucket público `noticias-imagenes`, hasta 5 MB), visible u oculta. |
 | `/panel/evento` | Fechas de apertura y cierre, interruptor manual, contador, CSV, ganador al azar y QR en dos estilos, estilizado (puntos redondeados, degradado azul, ojos circulares, isotipo suelto al centro) y clásico (máxima compatibilidad), en PNG 2400 px y SVG. |
 | `/c/[token]` | Portal de un cliente: pide su contraseña y lista sus informes con enlaces firmados de 5 minutos. |
@@ -97,7 +98,9 @@ Todo vive en este mismo proyecto como rutas renderizadas en el servidor (`export
 
 Seguridad: contraseñas de clientes con hash y sal; cookies `HttpOnly`, `Secure` y `SameSite=Lax` con vencimiento firmado dentro del valor; comprobación de origen de Astro en todos los POST; límite de intentos por IP en `/api/entrar`, `/api/c/entrar`, `/api/evento` y `/api/contacto` (tabla `intentos_acceso`, ver `supabase/fase5-limite.sql`); cabeceras de seguridad y `Cache-Control: no-store` en las rutas privadas (`src/middleware.ts`); RLS activo y la `service_role` key solo en el servidor.
 
-Scripts: `node scripts/generar-isotipo.mjs` recorta el isotipo del logo maestro para el QR; `node scripts/probar-qr.mjs` verifica con dos decodificadores (ZXing y jsQR) que ambos estilos de QR se leen en PNG, PNG degradado y SVG. `vercel.json` programa una visita diaria a `/api/salud` para que el proyecto gratuito de Supabase no se pause por inactividad.
+Migraciones: `supabase/schema.sql` es la forma final para un proyecto nuevo; un proyecto existente ejecuta en orden `fase5-limite.sql` y `fase6-clientes-eventos.sql` (`/api/salud` dice cuál falta).
+
+Scripts: `node scripts/generar-favicon.mjs` (favicon e iconos desde el isotipo), `node scripts/generar-isotipo.mjs` recorta el isotipo del logo maestro para el QR; `node scripts/probar-qr.mjs` verifica con dos decodificadores (ZXing y jsQR) que ambos estilos de QR se leen en PNG, PNG degradado y SVG. `vercel.json` programa una visita diaria a `/api/salud` para que el proyecto gratuito de Supabase no se pause por inactividad.
 
 ## Antes de publicar
 
