@@ -1,5 +1,6 @@
 ---
 import { Image } from 'astro:assets';
+import { fechaVE } from '../../lib/fechas';
 import Base from '../../layouts/Base.astro';
 import Contact from '../../components/Contact.astro';
 import { sb } from '../../lib/supabase';
@@ -7,15 +8,12 @@ import fotoNoticias from '../../assets/img/hero-slide-3.jpg';
 
 export const prerender = false;
 
-// Caché en el CDN de Vercel: se sirve al instante como una página estática y se regenera como
-// mucho cada minuto, así un cambio desde el panel tarda a lo sumo un minuto en verse.
-Astro.response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=600');
-
 const { id } = Astro.params;
 const { data: noticia } = await sb().from('noticias').select('*').eq('id', id).eq('publicado', true).maybeSingle();
-if (!noticia) return new Response('No encontrado', { status: 404 });
+// Oculta o eliminada: de vuelta a la lista, en vez de un 'No encontrado' en texto plano.
+if (!noticia) return Astro.redirect('/noticias', 303);
 
-const fecha = new Date(noticia.creado_en).toLocaleDateString('es-VE', { day: 'numeric', month: 'long', year: 'numeric' });
+const fecha = fechaVE;
 const parrafos = noticia.contenido.split('\n').map((p: string) => p.trim()).filter(Boolean);
 ---
 <Base title={noticia.titulo} description={noticia.contenido.slice(0, 160)}>
@@ -27,7 +25,7 @@ const parrafos = noticia.contenido.split('\n').map((p: string) => p.trim()).filt
     <div class="container-x flex flex-col gap-4">
       <a href="/noticias" class="w-fit text-[13px] font-semibold text-fog hover:text-neon" data-reveal="fade">← Noticias</a>
       <span class="eyebrow" data-reveal="fade">{fecha}</span>
-      <h1 class="display max-w-[900px] text-[clamp(32px,6vw,64px)] text-white" data-split>{noticia.titulo}</h1>
+      <h1 class="display max-w-[900px] text-[clamp(26px,6vw,64px)] text-white" data-split>{noticia.titulo}</h1>
     </div>
   </section>
 

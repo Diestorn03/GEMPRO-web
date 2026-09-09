@@ -2,29 +2,46 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { estaAutenticado } from '../../../lib/auth';
+import { aIso } from '../../../lib/evento';
 import { sb } from '../../../lib/supabase';
 
-/** Guarda la configuración de apertura/cierre del evento. */
+const UUID = /^[0-9a-f-]{36}$/;
+
+/** Eventos: crear, guardar (nombre, fechas e interruptor) y eliminar (sus registros se borran en cascada). */
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   if (!estaAutenticado(cookies)) return redirect('/entrar', 303);
   const form = await request.formData();
-  const inicio = String(form.get('inicio') ?? '').trim();
-  const fin = String(form.get('fin') ?? '').trim();
+  const accion = String(form.get('_accion') ?? 'guardar');
+  const id = String(form.get('id') ?? '');
+  const nombre = String(form.get('nombre') ?? '').trim().slice(0, 120);
+  const inicio = aIso(String(form.get('inicio') ?? '').trim());
+  const fin = aIso(String(form.get('fin') ?? '').trim());
   const forzar = String(form.get('forzar') ?? 'auto'); // 'auto' | 'abierto' | 'cerrado'
+  const forzar_abierto = forzar === 'abierto' ? true : forzar === 'cerrado' ? false : null;
+  const volver = (q: string) => redirect(`/panel/evento?${q}`, 303);
 
-  await sb().from('evento_config').update({
-    inicio: inicio ? new Date(inicio).toISOString() : null,
-    fin: fin ? new Date(fin).toISOString() : null,
-    forzar_abierto: forzar === 'abierto' ? true : forzar === 'cerrado' ? false : null,
-    actualizado_en: new Date().toISOString(),
-  }).eq('id', true);
-
-  return redirect('/panel/evento?guardado=1', 303);
+  if (accion === 'eliminar') {
+    if (UUID.test(id)) await sb().from('eventos').delete().eq('id', id);
+    return volver('eliminado=1');
+  }
+  if (accion === 'crear') {
+    if (!nombre || !inicio || !fin || fin <= inicio) return volver('error=1');
+    const { error } = await sb().from('eventos').insert({ nombre, inicio, fin, forzar_abierto: null });
+    if (error) { console.error('[panel/evento] no se pudo crear', error); return volver('error=1'); }
+    return volver('creado=1');
+  }
+  if (!UUID.test(id) || (inicio && fin && fin <= inicio)) return volver('error=1');
+  const { error } = await sb().from('eventos').update({ ...(nombre ? { nombre } : {}), inicio, fin, forzar_abierto }).eq('id', id);
+  if (error) { console.error('[panel/evento] no se pudo guardar', error); return volver('error=1'); }
+  return volver('guardado=1');
 };
 
-/** Lista de registros para exportar a CSV o elegir un ganador (solo lo consume /panel/evento). */
-export const GET: APIRoute = async ({ cookies }) => {
-  if (!estaAutenticado(cookies)) return new Response(JSON.stringify({ error: 'Sin sesión' }), { status: 401 });
-  const { data } = await sb().from('registro_evento').select('nombre, correo, telefono, creado_en').order('creado_en', { ascending: false });
-  return new Response(JSON.stringify(data ?? []), { headers: { 'Content-Type': 'application/json' } });
+/** Registros de un evento, para el CSV y el sorteo: ?evento=<uuid>. */
+export const GET: APIRoute = async ({ cookies, url }) => {
+  const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+  if (!estaAutenticado(cookies)) return json({ error: 'Sin sesión' }, 401);
+  const evento = url.searchParams.get('evento') ?? '';
+  if (!UUID.test(evento)) return json({ error: 'Evento inválido' }, 400);
+  const { data } = await sb().from('registro_evento').select('nombre, correo, telefono, creado_en').eq('evento_id', evento).order('creado_en', { ascending: false });
+  return json(data ?? []);
 };

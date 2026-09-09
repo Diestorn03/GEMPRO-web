@@ -6,7 +6,7 @@ import { stats } from '../data/site';
     {stats.map((s) => (
       <div class="flex flex-col gap-2 border-l-2 border-ink/25 pl-4 lg:pl-6">
         {'raw' in s ? (
-          <span class="display text-[64px] leading-[.9] text-ink lg:text-[120px]">{s.raw}</span>
+          <span class="display text-[clamp(44px,14vw,64px)] leading-[.9] text-ink lg:text-[120px]">{s.raw}</span>
         ) : (
           <span class="display text-[64px] leading-[.9] text-ink tabular-nums lg:text-[120px]" data-count={s.value} data-prefix={s.prefix ?? ''}>{s.prefix ?? ''}{s.value}</span>
         )}

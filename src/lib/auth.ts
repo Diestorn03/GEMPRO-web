@@ -73,12 +73,13 @@ export function contrasenaClienteCorrecta(intento: string, sal: string, hashGuar
 
 /** Sesión de UN cliente del portal: la cookie firma su propio id, así que no sirve para
  *  entrar a la página de otro cliente aunque se copie o se adivine el token de la URL. */
-export function valorCookieCliente(clienteId: string): string {
+/** La firma incluye la sal de la contraseña: al cambiarla (nueva sal) las sesiones abiertas dejan de valer. */
+export function valorCookieCliente(clienteId: string, sal: string): string {
   const exp = vencimiento();
-  return `${clienteId}.${exp}.${firmar(`cliente:${clienteId}:${exp}`)}`;
+  return `${clienteId}.${exp}.${firmar(`cliente:${clienteId}:${sal}:${exp}`)}`;
 }
-export function clienteAutenticado(cookies: AstroCookies, clienteId: string): boolean {
+export function clienteAutenticado(cookies: AstroCookies, clienteId: string, sal: string): boolean {
   const [id, exp, firma] = (cookies.get(COOKIE_CLIENTE)?.value ?? '').split('.');
   if (id !== clienteId) return false;
-  return firmaVigente(exp, firma, (e) => `cliente:${clienteId}:${e}`);
+  return firmaVigente(exp, firma, (e) => `cliente:${clienteId}:${sal}:${e}`);
 }

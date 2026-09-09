@@ -38,12 +38,12 @@ const { transparent = true } = Astro.props;
     </button>
   </div>
 
-  <div id="menu-movil" class="menu-panel fixed inset-0 z-[55] hidden flex-col bg-ink/95 px-6 pt-28 pb-10 backdrop-blur-lg lg:hidden" data-lenis-prevent>
+  <div id="menu-movil" class="menu-panel fixed inset-0 z-[55] hidden flex-col overflow-y-auto bg-ink/95 px-6 pt-24 pb-[calc(100px+env(safe-area-inset-bottom))] backdrop-blur-lg md:pb-10 lg:hidden" data-lenis-prevent>
     <nav aria-label="Menú móvil" class="flex flex-col gap-2">
       {nav.map((item, i) => (
-        <a href={item.href} class="menu-link display border-b border-white/10 py-4 text-[40px] leading-none text-white" style={`--i:${i}`}>{item.label}</a>
+        <a href={item.href} class="menu-link display border-b border-white/10 py-3 text-[clamp(28px,8.5vw,40px)] leading-none text-white" style={`--i:${i}`}>{item.label}</a>
       ))}
-      <a href={withBase('/#contacto')} class="menu-link display border-b border-white/10 py-4 text-[40px] leading-none text-neon" style="--i:4">Contacto</a>
+      <a href={withBase('/#contacto')} class="menu-link display border-b border-white/10 py-3 text-[clamp(28px,8.5vw,40px)] leading-none text-neon" style="--i:4">Contacto</a>
     </nav>
     <div class="mt-auto flex flex-col gap-3 pt-8">
       <a href={`https://wa.me/${site.whatsapp}`} target="_blank" rel="noopener" class="btn-primary">WhatsApp {site.whatsappDisplay}</a>
@@ -55,7 +55,10 @@ const { transparent = true } = Astro.props;
 <style>
   [data-nav].is-scrolled { background-color: rgba(6, 20, 38, 0.86); backdrop-filter: blur(14px); box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08); }
   [data-nav].is-hidden:not(.menu-open) { transform: translateY(-100%); }
-  [data-nav].menu-open { transform: none; background-color: transparent; }
+  /* Con el menú abierto la cabecera no puede tener backdrop-filter ni transform: cualquiera de los dos
+     la convierte en bloque contenedor del panel fixed inset-0, que quedaba recortado a los 76 px de la
+     cabecera y dejaba ver la página detrás. Tampoco se transicionan, o el recorte dura medio segundo. */
+  [data-nav].menu-open { transform: none; background-color: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; transition-property: background-color, box-shadow; }
   .menu-panel.is-open { display: flex; }
   .menu-panel.is-open .menu-link { animation: menu-in 0.6s var(--ease-out-expo) both; animation-delay: calc(var(--i) * 70ms + 60ms); }
   @keyframes menu-in { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }

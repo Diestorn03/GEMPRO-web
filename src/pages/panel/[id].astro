@@ -1,6 +1,8 @@
 ---
 import Panel from '../../layouts/Panel.astro';
+import { fechaVE } from '../../lib/fechas';
 import { estaAutenticado } from '../../lib/auth';
+import { descifrar } from '../../lib/cifrado';
 import { sb } from '../../lib/supabase';
 
 export const prerender = false;
@@ -13,27 +15,62 @@ const [{ data: cliente }, { data: informes }] = await Promise.all([
   sb().from('informes').select('*').eq('cliente_id', id).order('subido_en', { ascending: false }),
 ]);
 if (!cliente) return Astro.redirect('/panel', 303);
-const base = Astro.url.origin;
-const fecha = (iso: string) => new Date(iso).toLocaleDateString('es-VE', { day: 'numeric', month: 'long', year: 'numeric' });
+
+const link = `${Astro.url.origin}/c/${cliente.token}`;
+// Contraseña visible: cifrada al crear el cliente (Fase 6). null si el cliente es anterior a esa
+// versión o si AUTH_SECRET cambió; en ese caso se fija una nueva desde aquí.
+const contrasena = descifrar(cliente.password_cifrada);
+const mensajeCopiar = contrasena ? `Portal de informes técnicos GEMPRO\n${link}\nContraseña: ${contrasena}` : link;
+const etiquetaCopiar = contrasena ? 'Copiar link y contraseña' : 'Copiar link';
+const claveCambiada = Astro.url.searchParams.get('clave') === '1';
+const errorClave = Astro.url.searchParams.get('error') === 'clave';
+const fecha = fechaVE;
 ---
 <Panel title={cliente.nombre_empresa} seccion="clientes" eyebrow="Historial de informes" encabezado={cliente.nombre_empresa} descripcion={cliente.contacto ? `Contacto: ${cliente.contacto}` : undefined}>
   <a slot="acciones" href="/panel" class="btn-ghost border border-white/15 px-4 py-2.5 text-[13px]">← Todos los clientes</a>
 
-  <div class="mb-8 flex flex-col gap-2 rounded-md border border-neon/30 bg-neon/5 p-5 sm:flex-row sm:items-center sm:justify-between" data-reveal>
+  {claveCambiada && <p class="mb-6 rounded-md border border-neon/40 bg-neon/10 px-4 py-3 text-[14px] text-white" data-reveal="fade">Contraseña actualizada. Compártela de nuevo con el cliente; las sesiones anteriores quedaron cerradas.</p>}
+  {errorClave && <p class="mb-6 rounded-md border border-amber/40 bg-amber/10 px-4 py-3 text-[14px] text-amber" role="alert">No se pudo cambiar la contraseña (mínimo 8 caracteres).</p>}
+
+  <div class="mb-8 grid gap-4 rounded-md border border-neon/30 bg-neon/5 p-5 sm:grid-cols-[1fr_auto] sm:items-center" data-reveal>
     <div class="min-w-0">
-      <span class="eyebrow">Link privado del cliente</span>
-      <p class="mt-1 truncate font-mono text-[13px] text-white">{base}/c/{cliente.token}</p>
+      <span class="eyebrow">Acceso del cliente</span>
+      <p class="mt-1 truncate font-mono text-[13px] text-white">{link}</p>
+      <p class="mt-1 flex flex-wrap items-center gap-2 font-mono text-[13px] text-white">
+        <span class="text-mist">Contraseña:</span>
+        {contrasena ? (
+          <span id="clave-oculta">••••••••</span>
+          <span id="clave-visible" class="hidden">{contrasena}</span>
+          <button type="button" id="ver-clave" class="rounded border border-white/15 px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.1em] text-mist transition-colors hover:text-white">Mostrar</button>
+        ) : (
+          <span class="text-amber">no disponible: fíjala de nuevo abajo</span>
+        )}
+      </p>
     </div>
-    <button type="button" class="btn-ghost shrink-0 border border-white/15 px-4 py-2 text-[13px]" data-copiar={`${base}/c/${cliente.token}`}>Copiar link</button>
+    <button type="button" class="btn-primary px-4 py-2.5 text-[13px]" data-copiar={mensajeCopiar} data-etiqueta={etiquetaCopiar}>{etiquetaCopiar}</button>
+    <details class="sm:col-span-2">
+      <summary class="cursor-pointer text-[13px] font-semibold text-mist hover:text-white">Cambiar la contraseña de este cliente</summary>
+      <form method="post" action="/api/panel/clientes" data-ajax class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+        <input type="hidden" name="_accion" value="clave" />
+        <input type="hidden" name="id" value={cliente.id} />
+        <div class="flex-1">
+          <label for="password_nueva" class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Nueva contraseña (mínimo 8 caracteres)</label>
+          <input id="password_nueva" name="password" required minlength={8} class="field" autocomplete="off" />
+        </div>
+        <button type="submit" class="btn-ghost border border-white/15 px-4 py-3 text-[13px]">Guardar</button>
+      </form>
+    </details>
   </div>
 
-  <form method="post" action="/api/panel/informes" enctype="multipart/form-data" data-ajax data-reveal data-delay="0.1" class="mb-10 flex flex-col gap-3 rounded-md border border-white/10 bg-panel p-6 sm:flex-row sm:items-end lg:p-8">
-    <input type="hidden" name="cliente_id" value={cliente.id} />
-    <div class="flex-1">
-      <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog" for="archivos">Subir informes técnicos (uno o varios)</label>
-      <input type="file" name="archivos" id="archivos" multiple class="field text-[13px]" />
+  <form id="form-subida" data-cliente={cliente.id} data-reveal data-delay="0.1" class="mb-10 grid gap-3 rounded-md border border-white/10 bg-panel p-6 lg:p-8">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+      <div class="flex-1">
+        <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog" for="archivos">Subir informes técnicos (uno o varios, hasta 20 MB cada uno)</label>
+        <input type="file" id="archivos" multiple required class="field text-[13px]" />
+      </div>
+      <button type="submit" id="btn-subir" class="btn-primary whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50" data-magnetic disabled>Subir</button>
     </div>
-    <button type="submit" class="btn-primary whitespace-nowrap" data-magnetic>Subir</button>
+    <p id="estado-subida" class="hidden text-[13px] text-mist" aria-live="polite"></p>
   </form>
 
   <span class="eyebrow mb-4 block" data-reveal="fade">{(informes ?? []).length} informe{(informes ?? []).length === 1 ? '' : 's'}</span>
@@ -49,7 +86,7 @@ const fecha = (iso: string) => new Date(iso).toLocaleDateString('es-VE', { day: 
             <p class="font-mono text-[12px] text-mist">Subido el {fecha(inf.subido_en)}</p>
           </div>
         </div>
-        <form method="post" action="/api/panel/informes" data-ajax class="shrink-0">
+        <form method="post" action="/api/panel/informes" data-ajax data-confirmar="¿Eliminar este informe?" class="shrink-0">
           <input type="hidden" name="_accion" value="eliminar" />
           <input type="hidden" name="cliente_id" value={cliente.id} />
           <input type="hidden" name="id" value={inf.id} />
@@ -63,13 +100,79 @@ const fecha = (iso: string) => new Date(iso).toLocaleDateString('es-VE', { day: 
 </Panel>
 
 <script>
+  /**
+   * Subida directa a Supabase Storage: el servidor solo firma la URL y registra la fila; el
+   * archivo nunca pasa por Vercel (cuyo límite de 4,5 MB por petición rompía los informes reales).
+   */
+  async function pedir(body: Record<string, unknown>) {
+    const r = await fetch('/api/panel/informes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || `error ${r.status}`);
+    return j as { url: string; ruta: string };
+  }
+  function subir(url: string, archivo: File, progreso: (pct: number) => void) {
+    return new Promise<void>((resolver, rechazar) => {
+      const x = new XMLHttpRequest();
+      x.open('PUT', url);
+      x.setRequestHeader('Content-Type', archivo.type || 'application/octet-stream');
+      x.upload.onprogress = (e) => { if (e.lengthComputable) progreso(Math.round((e.loaded / e.total) * 100)); };
+      x.onload = () => (x.status >= 200 && x.status < 300 ? resolver() : rechazar(new Error(`Storage respondió ${x.status}`)));
+      x.onerror = () => rechazar(new Error('fallo de red'));
+      x.send(archivo);
+    });
+  }
+
   function setup() {
     document.querySelectorAll<HTMLButtonElement>('[data-copiar]').forEach((b) => {
       if (b.dataset.listo) return;
       b.dataset.listo = '1';
       b.addEventListener('click', async () => {
-        try { await navigator.clipboard.writeText(b.dataset.copiar || ''); b.textContent = 'Copiado ✓'; setTimeout(() => (b.textContent = 'Copiar link'), 1800); } catch { prompt('Copia el link:', b.dataset.copiar); }
+        const etiqueta = b.dataset.etiqueta || 'Copiar';
+        try { await navigator.clipboard.writeText(b.dataset.copiar || ''); b.textContent = 'Copiado ✓'; setTimeout(() => (b.textContent = etiqueta), 1800); } catch { prompt('Copia el texto:', b.dataset.copiar); }
       });
+    });
+    const ver = document.getElementById('ver-clave');
+    if (ver && !ver.dataset.listo) {
+      ver.dataset.listo = '1';
+      ver.addEventListener('click', () => {
+        const oculta = document.getElementById('clave-oculta')!;
+        const visible = document.getElementById('clave-visible')!;
+        const mostrar = visible.classList.contains('hidden');
+        visible.classList.toggle('hidden', !mostrar);
+        oculta.classList.toggle('hidden', mostrar);
+        ver.textContent = mostrar ? 'Ocultar' : 'Mostrar';
+      });
+    }
+
+    const form = document.getElementById('form-subida') as HTMLFormElement | null;
+    const input = document.getElementById('archivos') as HTMLInputElement | null;
+    const boton = document.getElementById('btn-subir') as HTMLButtonElement | null;
+    const estado = document.getElementById('estado-subida');
+    if (!form || !input || !boton || !estado || form.dataset.listo) return;
+    form.dataset.listo = '1';
+    input.addEventListener('change', () => { boton.disabled = !input.files?.length; });
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const archivos = [...(input.files ?? [])];
+      if (!archivos.length) return;
+      boton.disabled = true; input.disabled = true; estado.classList.remove('hidden');
+      const clienteId = form.dataset.cliente!;
+      let subidos = 0;
+      for (const [i, archivo] of archivos.entries()) {
+        const etiqueta = `${i + 1} de ${archivos.length}: ${archivo.name}`;
+        try {
+          if (archivo.size > 20 * 1024 * 1024) throw new Error('supera los 20 MB');
+          estado.textContent = `Preparando ${etiqueta}…`;
+          const firma = await pedir({ _accion: 'firmar', cliente_id: clienteId, nombre_archivo: archivo.name, tamano: archivo.size });
+          await subir(firma.url, archivo, (pct) => (estado.textContent = `Subiendo ${etiqueta} (${pct} %)`));
+          await pedir({ _accion: 'registrar', cliente_id: clienteId, nombre_archivo: archivo.name, ruta_storage: firma.ruta });
+          subidos++;
+        } catch (e) {
+          alert(`No se pudo subir ${archivo.name}: ${(e as Error).message}`);
+        }
+      }
+      if (subidos) { estado.textContent = `Listo: ${subidos} informe${subidos === 1 ? '' : 's'} subido${subidos === 1 ? '' : 's'}.`; location.reload(); }
+      else { estado.textContent = 'No se subió ningún archivo.'; boton.disabled = false; input.disabled = false; }
     });
   }
   document.addEventListener('astro:page-load', setup);

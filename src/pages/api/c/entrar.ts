@@ -21,6 +21,6 @@ export const POST: APIRoute = async (ctx) => {
     return redirect(`/c/${token}?error=1`, 303);
   }
 
-  cookies.set(COOKIE_CLIENTE, valorCookieCliente(cliente.id), opcionesCookie(url));
+  cookies.set(COOKIE_CLIENTE, valorCookieCliente(cliente.id, cliente.password_sal), opcionesCookie(url));
   return redirect(`/c/${token}`, 303);
 };

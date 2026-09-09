@@ -17,25 +17,28 @@ alter table mensajes enable row level security;
 -- el rol anon. Sin políticas, RLS bloquea todo acceso público por defecto.
 
 -- Registro del evento con QR (Fase 3): nombre/correo/teléfono para la rifa y la lista de contactos.
+-- Eventos (Fase 6): cada registro por QR pertenece a un evento; el QR (/evento) es permanente.
+create table eventos (
+  id uuid primary key default gen_random_uuid(),
+  nombre text not null,
+  inicio timestamptz,
+  fin timestamptz,
+  forzar_abierto boolean, -- true abre, false cierra, null = según inicio/fin
+  creado_en timestamptz not null default now(),
+  check (inicio is null or fin is null or fin > inicio)
+);
+alter table eventos enable row level security;
+
 create table registro_evento (
   id uuid primary key default gen_random_uuid(),
+  evento_id uuid not null references eventos(id) on delete cascade,
   nombre text not null,
   correo text not null,
   telefono text,
   creado_en timestamptz not null default now()
 );
+create index registro_evento_evento_id_idx on registro_evento (evento_id);
 alter table registro_evento enable row level security;
-
--- Un solo renglón: fecha/hora del evento + interruptor manual de respaldo.
-create table evento_config (
-  id boolean primary key default true check (id), -- fuerza que exista un único renglón
-  inicio timestamptz,
-  fin timestamptz,
-  forzar_abierto boolean,  -- true = abierto sin importar la fecha; false = cerrado sin importar la fecha; null = usar inicio/fin
-  actualizado_en timestamptz not null default now()
-);
-insert into evento_config (id) values (true);
-alter table evento_config enable row level security;
 
 -- Portal de clientes (Fase 2): cada cliente tiene un link privado (token) y una contraseña propia.
 create table clientes (
@@ -44,6 +47,7 @@ create table clientes (
   token text not null unique,
   password_sal text not null,
   password_hash text not null,
+  password_cifrada text, -- Fase 6: reversible con AUTH_SECRET, para poder mostrarla en el panel
   contacto text,
   creado_en timestamptz not null default now()
 );

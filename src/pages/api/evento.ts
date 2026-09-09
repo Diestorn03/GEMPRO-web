@@ -2,7 +2,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sb } from '../../lib/supabase';
-import { eventoAbierto } from '../../lib/evento';
+import { eventoAbierto, eventoActual } from '../../lib/evento';
 import { bloqueado, ipDe, registrarIntento } from '../../lib/limite';
 
 const json = (body: unknown, status = 200) =>
@@ -13,8 +13,9 @@ export const POST: APIRoute = async (ctx) => {
   const { request } = ctx;
   const ip = ipDe(ctx);
   if (await bloqueado(ip, 'evento', 120, 60)) return json({ ok: false, error: 'Demasiados registros desde esta conexión. Intente más tarde.' }, 429);
-  const { data: config } = await sb().from('evento_config').select('*').eq('id', true).maybeSingle();
-  if (!eventoAbierto(config)) return json({ ok: false, error: 'El registro para el evento no está disponible en este momento.' }, 403);
+  const { data: eventos } = await sb().from('eventos').select('id, inicio, fin, forzar_abierto').order('creado_en', { ascending: false });
+  const evento = eventoActual(eventos ?? []);
+  if (!evento || !eventoAbierto(evento)) return json({ ok: false, error: 'El registro para el evento no está disponible en este momento.' }, 403);
 
   let data: Record<string, unknown> = {};
   try { data = await request.json(); } catch { return json({ ok: false, error: 'Solicitud inválida.' }, 400); }
@@ -28,7 +29,7 @@ export const POST: APIRoute = async (ctx) => {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(correo)) errores.correo = 'Indique un correo válido.';
   if (Object.keys(errores).length) return json({ ok: false, errores }, 422);
 
-  const { error } = await sb().from('registro_evento').insert({ nombre, correo, telefono: telefono || null });
+  const { error } = await sb().from('registro_evento').insert({ nombre, correo, telefono: telefono || null, evento_id: evento.id });
   if (error) { console.error('[evento] no se pudo registrar', error); return json({ ok: false, error: 'No pudimos registrar su participación. Intente de nuevo.' }, 500); }
   await registrarIntento(ip, 'evento');
   return json({ ok: true });

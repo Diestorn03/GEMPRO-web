@@ -1,5 +1,6 @@
 ---
 import { Image } from 'astro:assets';
+import { fechaVE } from '../lib/fechas';
 import Base from '../layouts/Base.astro';
 import Contact from '../components/Contact.astro';
 import { sb } from '../lib/supabase';
@@ -7,12 +8,8 @@ import fotoNoticias from '../assets/img/hero-slide-3.jpg';
 
 export const prerender = false;
 
-// Caché en el CDN de Vercel: se sirve al instante como una página estática y se regenera como
-// mucho cada minuto, así un cambio desde el panel tarda a lo sumo un minuto en verse.
-Astro.response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=600');
-
 const { data: noticias } = await sb().from('noticias').select('*').eq('publicado', true).order('creado_en', { ascending: false });
-const fecha = (iso: string) => new Date(iso).toLocaleDateString('es-VE', { day: 'numeric', month: 'long', year: 'numeric' });
+const fecha = fechaVE;
 const extracto = (texto: string) => (texto.length > 160 ? texto.slice(0, 160).trimEnd() + '…' : texto);
 ---
 <Base title="Noticias" description="Artículos de GEMPRO sobre mantenimiento predictivo, proactivo y preventivo, escritos por el mismo equipo que hace el diagnóstico en planta.">
@@ -23,7 +20,7 @@ const extracto = (texto: string) => (texto.length > 160 ? texto.slice(0, 160).tr
     <div class="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(6,20,38,.96)_0%,rgba(6,20,38,.82)_55%,rgba(6,20,38,.55)_100%)]" aria-hidden="true"></div>
     <div class="container-x flex flex-col gap-4">
       <span class="eyebrow" data-reveal="fade">Noticias</span>
-      <h1 class="display max-w-[900px] text-[clamp(40px,7vw,84px)] text-white" data-split>Lo que aprendemos midiendo, lo compartimos.</h1>
+      <h1 class="display max-w-[900px] text-[clamp(30px,7vw,84px)] text-white" data-split>Lo que aprendemos midiendo, lo compartimos.</h1>
       <p class="max-w-[640px] text-[17px] leading-relaxed text-fog lg:text-[19px]" data-reveal data-delay="0.3">Artículos cortos sobre lo que vemos en planta, escritos por el mismo equipo que hace el diagnóstico.</p>
     </div>
   </section>

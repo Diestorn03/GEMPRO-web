@@ -1,5 +1,6 @@
 ---
 import { Image } from 'astro:assets';
+import { fechaVE } from '../../lib/fechas';
 import PanelBase from '../../layouts/PanelBase.astro';
 import { clienteAutenticado } from '../../lib/auth';
 import { sb } from '../../lib/supabase';
@@ -11,10 +12,10 @@ const { token } = Astro.params;
 const { data: cliente } = await sb().from('clientes').select('*').eq('token', token).maybeSingle();
 if (!cliente) return new Response('No encontrado', { status: 404 });
 
-const autenticado = clienteAutenticado(Astro.cookies, cliente.id);
+const autenticado = clienteAutenticado(Astro.cookies, cliente.id, cliente.password_sal);
 const error = Astro.url.searchParams.get('error');
 const mensajeError = error === '2' ? 'Demasiados intentos. Espere 15 minutos e intente de nuevo.' : error ? 'Contraseña incorrecta.' : '';
-const fecha = (iso: string) => new Date(iso).toLocaleDateString('es-VE', { day: 'numeric', month: 'long', year: 'numeric' });
+const fecha = fechaVE;
 
 let informes: { id: string; nombre_archivo: string; url: string; subido_en: string }[] = [];
 if (autenticado) {
@@ -27,7 +28,7 @@ if (autenticado) {
 <PanelBase title={cliente.nombre_empresa}>
   <nav slot="nav"></nav>
   {!autenticado ? (
-    <section class="relative -mx-6 -my-10 isolate overflow-hidden lg:-my-14" data-parallax-scope>
+    <section class="relative -mx-5 -my-10 isolate sm:-mx-8 lg:-mx-[72px] overflow-hidden lg:-my-14" data-parallax-scope>
       <div class="absolute inset-0 -z-20" data-parallax="10">
         <Image src={fotoFondo} alt="" widths={[768, 1280, 1920]} sizes="100vw" class="h-full w-full object-cover" loading="eager" />
       </div>

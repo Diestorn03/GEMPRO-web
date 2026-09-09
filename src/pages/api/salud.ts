@@ -2,6 +2,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sb } from '../../lib/supabase';
+import { descifrar } from '../../lib/cifrado';
 
 /**
  * Chequeo de configuración en producción. NO expone valores, solo si cada variable llegó al
@@ -23,14 +24,27 @@ export const GET: APIRoute = async () => {
     base_de_datos = error ? `error: ${error.message}` : 'ok';
   } catch (e) { base_de_datos = `error: ${(e as Error).message}`; }
   let limite_intentos = 'sin probar hasta que base_de_datos sea ok';
+  let ultimo_latido: string | null = null;
+  let fase6 = 'sin probar hasta que base_de_datos sea ok';
+  let contrasenas_visibles = 'sin probar';
   if (base_de_datos === 'ok') {
-    const { error: errLimite } = await sb().from('intentos_acceso').select('id', { count: 'exact', head: true });
+    const { data: latido, error: errLimite } = await sb().from('intentos_acceso').select('creado_en').eq('ruta', 'latido').order('creado_en', { ascending: false }).limit(1).maybeSingle();
     limite_intentos = errLimite ? 'falta la tabla intentos_acceso: ejecutar supabase/fase5-limite.sql en el SQL Editor de Supabase' : 'ok';
+    ultimo_latido = latido?.creado_en ?? null;
+    const [{ data: cifrado, error: errCol }, { error: errEventos }] = await Promise.all([
+      sb().from('clientes').select('password_cifrada').not('password_cifrada', 'is', null).limit(1).maybeSingle(),
+      sb().from('eventos').select('id', { count: 'exact', head: true }),
+    ]);
+    fase6 = errCol || errEventos ? 'falta ejecutar supabase/fase6-clientes-eventos.sql en el SQL Editor de Supabase' : 'ok';
+    contrasenas_visibles = errCol ? 'sin probar' : !cifrado ? 'ningún cliente tiene contraseña guardada todavía' : descifrar(cifrado.password_cifrada) ? 'ok' : 'AUTH_SECRET cambió: asignar contraseñas nuevas desde el panel';
   }
   const body = {
     region: process.env.VERCEL_REGION || 'local',
     latencia_bd_ms,
     limite_intentos,
+    ultimo_latido,
+    fase6,
+    contrasenas_visibles,
     supabase_url: Boolean(v('SUPABASE_URL')),
     supabase_service_key: Boolean(v('SUPABASE_SERVICE_KEY')),
     admin_password: Boolean(v('ADMIN_PASSWORD')),

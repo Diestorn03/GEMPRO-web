@@ -5,17 +5,17 @@
 import { Image } from 'astro:assets';
 import PanelBase from '../layouts/PanelBase.astro';
 import { sb } from '../lib/supabase';
-import { eventoAbierto } from '../lib/evento';
+import { eventoAbierto, eventoActual } from '../lib/evento';
 import fotoFondo from '../assets/img/hero-slide-3.jpg';
 
 export const prerender = false;
 
-const { data: config } = await sb().from('evento_config').select('*').eq('id', true).maybeSingle();
-const abierto = eventoAbierto(config);
+const { data: eventos } = await sb().from('eventos').select('id, inicio, fin, forzar_abierto').order('creado_en', { ascending: false });
+const abierto = eventoAbierto(eventoActual(eventos ?? []));
 ---
 <PanelBase title="Registro del evento">
   <nav slot="nav"></nav>
-  <section class="relative -mx-6 -my-10 isolate overflow-hidden lg:-my-14" data-parallax-scope>
+  <section class="relative -mx-5 -my-10 isolate sm:-mx-8 lg:-mx-[72px] overflow-hidden lg:-my-14" data-parallax-scope>
     <div class="absolute inset-0 -z-20" data-parallax="10">
       <Image src={fotoFondo} alt="" widths={[768, 1280, 1920]} sizes="100vw" class="h-full w-full object-cover" loading="eager" />
     </div>

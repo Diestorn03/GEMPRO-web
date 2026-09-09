@@ -3,115 +3,202 @@ import { qrPngCacheado } from '../../lib/qr';
 import Panel from '../../layouts/Panel.astro';
 import { estaAutenticado } from '../../lib/auth';
 import { sb } from '../../lib/supabase';
-import { eventoAbierto } from '../../lib/evento';
+import { aLocal, eventoAbierto, eventoActual } from '../../lib/evento';
+import { fechaHoraVE } from '../../lib/fechas';
 
 export const prerender = false;
 
 if (!estaAutenticado(Astro.cookies)) return Astro.redirect('/entrar', 303);
 
-const [{ data: config }, { count }] = await Promise.all([
-  sb().from('evento_config').select('*').eq('id', true).maybeSingle(),
-  sb().from('registro_evento').select('*', { count: 'exact', head: true }),
+interface Evento { id: string; nombre: string; inicio: string | null; fin: string | null; forzar_abierto: boolean | null; creado_en: string }
+const [{ data: eventosData }, { data: registros }] = await Promise.all([
+  sb().from('eventos').select('*').order('creado_en', { ascending: false }),
+  sb().from('registro_evento').select('evento_id'),
 ]);
-const guardado = Astro.url.searchParams.get('guardado');
+const eventos = (eventosData ?? []) as Evento[];
+// Conteo por evento en JS: una consulta ligera en vez de una por evento.
+const conteo: Record<string, number> = {};
+for (const r of registros ?? []) conteo[r.evento_id] = (conteo[r.evento_id] ?? 0) + 1;
+const actual = eventoActual(eventos);
+const abierto = eventoAbierto(actual);
+const abiertos = eventos.filter(eventoAbierto);
+const historial = eventos.filter((e) => e.id !== actual?.id);
+const registrosDe = (e: Evento) => conteo[e.id] ?? 0;
+const forzarDe = (e: Evento | null) => (e?.forzar_abierto === true ? 'abierto' : e?.forzar_abierto === false ? 'cerrado' : 'auto');
+const rango = (e: Evento) => (e.inicio && e.fin ? `${fechaHoraVE(e.inicio)} → ${fechaHoraVE(e.fin)}` : 'sin fechas');
+
+const p = Astro.url.searchParams;
+const aviso = p.get('guardado') ? 'Evento guardado.' : p.get('creado') ? 'Evento creado.' : p.get('eliminado') ? 'Evento eliminado junto con sus registros.' : '';
+const error = p.get('error') === '1';
 
 const urlEvento = `${Astro.url.origin}/evento`;
-const qrVista = 'data:image/png;base64,' + (await qrPngCacheado(urlEvento, 'gempro', 480)).toString('base64');
-
-const aFecha = (iso: string | null) => (iso ? new Date(iso).toISOString().slice(0, 16) : '');
-const forzarActual = config?.forzar_abierto === true ? 'abierto' : config?.forzar_abierto === false ? 'cerrado' : 'auto';
-const abierto = eventoAbierto(config);
+const [qrGempro, qrClasico] = await Promise.all([qrPngCacheado(urlEvento, 'gempro', 480), qrPngCacheado(urlEvento, 'clasico', 480)]);
+const dataUrl = (b: Buffer) => 'data:image/png;base64,' + b.toString('base64');
+const campo = 'mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog';
+const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[12px]';
 ---
-<Panel title="Evento" seccion="evento" eyebrow="Registro por QR" encabezado="El evento, con un código." descripcion="La gente escanea el QR, deja nombre, correo y teléfono, y queda en la lista para la rifa y para futuras comunicaciones de GEMPRO.">
+<Panel title="Eventos" seccion="evento" eyebrow="Registro por QR" encabezado="Un código, todos los eventos." descripcion="El QR es permanente: apunta siempre a la página de registro. Cada evento tiene sus fechas, sus registros, su CSV y su sorteo; los anteriores quedan en el historial.">
   <span slot="acciones" class:list={['inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[12px] font-bold uppercase tracking-[0.1em]', abierto ? 'border-neon/50 text-neon' : 'border-amber/50 text-amber']}>
-    <span class:list={['h-2 w-2 rounded-full', abierto ? 'bg-neon' : 'bg-amber']} aria-hidden="true"></span>{abierto ? 'Registro abierto' : 'Registro cerrado'}
+    <span class:list={['h-2 w-2 rounded-full', abierto ? 'bg-neon' : 'bg-amber']} aria-hidden="true"></span>{abierto ? `Registro abierto: ${actual!.nombre}` : 'Ningún evento activo'}
   </span>
 
-  {guardado === '1' && <p class="mb-6 rounded-md border border-neon/40 bg-neon/10 px-4 py-3 text-[14px] text-white" data-reveal="fade">Configuración guardada.</p>}
+  {aviso && <p class="mb-6 rounded-md border border-neon/40 bg-neon/10 px-4 py-3 text-[14px] text-white" data-reveal="fade">{aviso}</p>}
+  {error && <p class="mb-6 rounded-md border border-amber/40 bg-amber/10 px-4 py-3 text-[14px] text-amber" role="alert">Revisa los datos: hace falta nombre, fecha de apertura y de cierre, y el cierre debe ser después de la apertura.</p>}
+  {abiertos.length > 1 && <p class="mb-6 rounded-md border border-amber/40 bg-amber/10 px-4 py-3 text-[14px] text-amber" role="alert">Hay {abiertos.length} eventos abiertos a la vez; el QR registra en «{actual!.nombre}». Cierra los demás para evitar confusiones.</p>}
 
   <div class="grid min-w-0 gap-6 lg:grid-cols-[1fr_340px]" data-reveal-group data-stagger="0.1">
     <div class="grid min-w-0 gap-6">
+      {actual ? (
+        <div class="grid min-w-0 gap-5 rounded-md border border-white/10 bg-panel p-6 lg:p-8" data-tarjeta>
+          <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <span class="eyebrow">{abierto ? 'Evento en curso' : 'Último evento (cerrado)'}</span>
+              <h2 class="display mt-2 text-[24px] text-white">{actual.nombre}</h2>
+              <p class="mt-1 font-mono text-[12px] text-mist">{rango(actual)}</p>
+            </div>
+            <div class="text-right">
+              <span class="display block text-[44px] leading-none text-neon tabular-nums" data-count={registrosDe(actual)}>{registrosDe(actual)}</span>
+              <span class="text-[12px] font-semibold uppercase tracking-[0.1em] text-mist">registros</span>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" class={botonQr} data-csv data-evento={actual.id} data-nombre={actual.nombre}>Exportar CSV</button>
+            <button type="button" class="btn-primary px-4 py-2.5 text-[13px]" data-ganador data-evento={actual.id}>Elegir ganador</button>
+          </div>
+          <p class="hidden rounded-md border border-neon/40 bg-neon/10 px-4 py-3 text-[15px] text-white" data-resultado></p>
+
+          <form method="post" action="/api/panel/evento" data-ajax class="grid min-w-0 gap-4 border-t border-white/10 pt-5 sm:grid-cols-2">
+            <input type="hidden" name="_accion" value="guardar" />
+            <input type="hidden" name="id" value={actual.id} />
+            <div class="sm:col-span-2">
+              <label class={campo} for="nombre">Nombre del evento</label>
+              <input name="nombre" id="nombre" value={actual.nombre} required class="field" />
+            </div>
+            <div class="min-w-0">
+              <label class={campo} for="inicio">Abre (hora de Venezuela)</label>
+              <input type="datetime-local" name="inicio" id="inicio" value={aLocal(actual.inicio)} class="field w-full min-w-0" />
+            </div>
+            <div class="min-w-0">
+              <label class={campo} for="fin">Cierra (hora de Venezuela)</label>
+              <input type="datetime-local" name="fin" id="fin" value={aLocal(actual.fin)} class="field w-full min-w-0" />
+            </div>
+            <div class="sm:col-span-2">
+              <label class={campo} for="forzar">Interruptor manual</label>
+              <select name="forzar" id="forzar" class="field">
+                <option value="auto" selected={forzarDe(actual) === 'auto'}>Automático según las fechas de arriba</option>
+                <option value="abierto" selected={forzarDe(actual) === 'abierto'}>Forzar abierto (ignora las fechas)</option>
+                <option value="cerrado" selected={forzarDe(actual) === 'cerrado'}>Forzar cerrado (ignora las fechas)</option>
+              </select>
+            </div>
+            <button type="submit" class="btn-primary self-start sm:col-span-2" data-magnetic>Guardar</button>
+          </form>
+        </div>
+      ) : (
+        <p class="rounded-md border border-dashed border-white/15 p-10 text-center text-mist">Todavía no hay eventos. Crea el primero aquí abajo.</p>
+      )}
+
       <form method="post" action="/api/panel/evento" data-ajax class="grid min-w-0 gap-4 rounded-md border border-white/10 bg-panel p-6 sm:grid-cols-2 lg:p-8">
-        <div class="sm:col-span-2"><span class="eyebrow">Apertura y cierre</span><h2 class="display mt-2 text-[24px] text-white">Fechas y control manual</h2></div>
-        <div class="min-w-0">
-          <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog" for="inicio">Abre</label>
-          <input type="datetime-local" name="inicio" id="inicio" value={aFecha(config?.inicio ?? null)} class="field w-full min-w-0" />
-        </div>
-        <div class="min-w-0">
-          <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog" for="fin">Cierra</label>
-          <input type="datetime-local" name="fin" id="fin" value={aFecha(config?.fin ?? null)} class="field w-full min-w-0" />
-        </div>
+        <input type="hidden" name="_accion" value="crear" />
+        <div class="sm:col-span-2"><span class="eyebrow">Nuevo evento</span><h2 class="display mt-2 text-[24px] text-white">Programar el siguiente</h2></div>
         <div class="sm:col-span-2">
-          <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog" for="forzar">Interruptor manual</label>
-          <select name="forzar" id="forzar" class="field">
-            <option value="auto" selected={forzarActual === 'auto'}>Automático según las fechas de arriba</option>
-            <option value="abierto" selected={forzarActual === 'abierto'}>Forzar abierto (ignora las fechas)</option>
-            <option value="cerrado" selected={forzarActual === 'cerrado'}>Forzar cerrado (ignora las fechas)</option>
-          </select>
+          <label class={campo} for="nuevo-nombre">Nombre</label>
+          <input name="nombre" id="nuevo-nombre" required class="field" placeholder="Feria Industrial 2026" />
         </div>
-        <button type="submit" class="btn-primary self-start sm:col-span-2" data-magnetic>Guardar</button>
+        <div class="min-w-0">
+          <label class={campo} for="nuevo-inicio">Abre (hora de Venezuela)</label>
+          <input type="datetime-local" name="inicio" id="nuevo-inicio" required class="field w-full min-w-0" />
+        </div>
+        <div class="min-w-0">
+          <label class={campo} for="nuevo-fin">Cierra (hora de Venezuela)</label>
+          <input type="datetime-local" name="fin" id="nuevo-fin" required class="field w-full min-w-0" />
+        </div>
+        <button type="submit" class="btn-ghost self-start border border-white/15 sm:col-span-2">Crear evento</button>
       </form>
 
       <div class="rounded-md border border-white/10 bg-panel p-6 lg:p-8">
-        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <span class="eyebrow">Participantes</span>
-            <h2 class="display mt-1 text-[40px] leading-none text-neon tabular-nums" data-count={count ?? 0}>{count ?? 0}</h2>
+        <span class="eyebrow">Historial</span>
+        <h2 class="display mb-4 mt-2 text-[24px] text-white">Eventos anteriores</h2>
+        {historial.length === 0 ? (
+          <p class="rounded-md border border-dashed border-white/15 p-8 text-center text-[14px] text-mist">Cuando termine el evento actual y crees el siguiente, el anterior aparecerá aquí con sus registros, su CSV y su sorteo.</p>
+        ) : (
+          <div class="grid gap-3">
+            {historial.map((e) => (
+              <div class="grid gap-3 rounded-md border border-white/10 bg-ink/40 p-4 sm:grid-cols-[1fr_auto] sm:items-center" data-tarjeta>
+                <div class="min-w-0">
+                  <p class="truncate text-[16px] font-semibold text-white">{e.nombre} <span class:list={['ml-2 text-[11px] font-bold uppercase tracking-[0.1em]', eventoAbierto(e) ? 'text-neon' : 'text-mist']}>{eventoAbierto(e) ? 'abierto' : 'cerrado'}</span></p>
+                  <p class="font-mono text-[12px] text-mist">{rango(e)} · <span class="text-white">{registrosDe(e)}</span> registro{registrosDe(e) === 1 ? '' : 's'}</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <button type="button" class="btn-ghost border border-white/15 px-3 py-2 text-[12px]" data-csv data-evento={e.id} data-nombre={e.nombre}>CSV</button>
+                  <button type="button" class="btn-ghost border border-white/15 px-3 py-2 text-[12px]" data-ganador data-evento={e.id}>Ganador</button>
+                  <form method="post" action="/api/panel/evento" data-ajax data-confirmar={`¿Eliminar «${e.nombre}» y sus ${registrosDe(e)} registros?`}>
+                    <input type="hidden" name="_accion" value="eliminar" />
+                    <input type="hidden" name="id" value={e.id} />
+                    <button type="submit" class="btn-ghost border border-white/15 px-3 py-2 text-[12px] text-amber">Eliminar</button>
+                  </form>
+                </div>
+                <p class="hidden rounded-md border border-neon/40 bg-neon/10 px-4 py-2 text-[14px] text-white sm:col-span-2" data-resultado></p>
+              </div>
+            ))}
           </div>
-          <div class="flex gap-2">
-            <button type="button" id="btn-csv" class="btn-ghost border border-white/15 px-4 py-2 text-[13px]">Exportar CSV</button>
-            <button type="button" id="btn-ganador" class="btn-primary px-4 py-2 text-[13px]">Elegir ganador</button>
-          </div>
-        </div>
-        <p id="resultado-ganador" class="hidden rounded-md border border-neon/40 bg-neon/10 px-4 py-3 text-[15px] text-white"></p>
+        )}
       </div>
     </div>
 
-    <div class="flex flex-col items-center gap-3 rounded-md border border-white/10 bg-panel p-6">
-      <span class="eyebrow self-start">Código QR</span>
-      <img src={qrVista} alt="QR del registro del evento con el logo de GEMPRO al centro" class="w-full max-w-[320px] rounded" />
-      <p class="break-all text-center font-mono text-[12px] text-neon">{urlEvento}</p>
-      <div class="grid w-full grid-cols-2 gap-2">
-        <a href="/api/panel/qr?formato=png&estilo=gempro" class="btn-primary px-3 py-2.5 text-center text-[12px]">PNG estilo GEMPRO</a>
-        <a href="/api/panel/qr?formato=svg&estilo=gempro" class="btn-primary px-3 py-2.5 text-center text-[12px]">SVG estilo GEMPRO</a>
-        <a href="/api/panel/qr?formato=png&estilo=clasico" class="btn-ghost border border-white/15 px-3 py-2.5 text-center text-[12px]">PNG clásico</a>
-        <a href="/api/panel/qr?formato=svg&estilo=clasico" class="btn-ghost border border-white/15 px-3 py-2.5 text-center text-[12px]">SVG clásico</a>
+    <div class="flex flex-col gap-4 rounded-md border border-white/10 bg-panel p-6">
+      <span class="eyebrow">Código QR permanente</span>
+      <p class="break-all font-mono text-[12px] text-neon">{urlEvento}</p>
+      <div class="grid gap-3">
+        <img src={dataUrl(qrGempro)} alt="QR estilo GEMPRO" class="w-full rounded" />
+        <div class="grid grid-cols-2 gap-2">
+          <a href="/api/panel/qr?formato=png&estilo=gempro" class={botonQr}>Estilo GEMPRO · PNG</a>
+          <a href="/api/panel/qr?formato=svg&estilo=gempro" class={botonQr}>Estilo GEMPRO · SVG</a>
+        </div>
       </div>
-      <p class="text-center text-[12px] leading-relaxed text-mist">PNG de 2400 px (20 cm a 300 dpi) y SVG vectorial para imprenta a cualquier tamaño. El clásico es la versión de máxima compatibilidad por si algún lector viejo no lee el estilizado.</p>
+      <div class="grid gap-3 border-t border-white/10 pt-4">
+        <img src={dataUrl(qrClasico)} alt="QR clásico" class="w-full rounded" />
+        <div class="grid grid-cols-2 gap-2">
+          <a href="/api/panel/qr?formato=png&estilo=clasico" class={botonQr}>Clásico · PNG</a>
+          <a href="/api/panel/qr?formato=svg&estilo=clasico" class={botonQr}>Clásico · SVG</a>
+        </div>
+      </div>
+      <p class="text-[12px] leading-relaxed text-mist">PNG: 2400 px, 20 cm a 300 dpi, listo para imprimir. SVG: vectorial para la imprenta (no se previsualiza en el teléfono, es normal). El clásico es la versión de máxima compatibilidad.</p>
     </div>
   </div>
 </Panel>
 
 <script>
   function setup() {
-    const btnCsv = document.getElementById('btn-csv') as HTMLButtonElement | null;
-    const btnGanador = document.getElementById('btn-ganador') as HTMLButtonElement | null;
-    const resultado = document.getElementById('resultado-ganador');
-    if (!btnCsv || !btnGanador || !resultado || btnCsv.dataset.listo) return;
-    btnCsv.dataset.listo = '1';
+    const raiz = document.querySelector<HTMLElement>('main');
+    if (!raiz || raiz.dataset.eventosListo) return;
+    raiz.dataset.eventosListo = '1';
 
-    async function traerRegistros() {
-      const res = await fetch('/api/panel/evento');
-      return res.json();
-    }
+    const traer = async (evento: string) => (await fetch(`/api/panel/evento?evento=${evento}`)).json();
+    // Celdas que empiezan por = + - @ se prefijan con ' para que Excel no las ejecute como fórmula.
+    const celda = (v: unknown) => { const s = String(v ?? ''); return `"${(/^[=+\-@]/.test(s) ? "'" + s : s).replace(/"/g, '""')}"`; };
+    const fechaVE = (iso: string) => new Date(iso).toLocaleString('es-VE', { timeZone: 'America/Caracas' });
 
-    btnCsv.addEventListener('click', async () => {
-      const registros = await traerRegistros();
-      const filas = [['Nombre', 'Correo', 'Teléfono', 'Fecha'], ...registros.map((r: any) => [r.nombre, r.correo, r.telefono ?? '', r.creado_en])];
-      const csv = filas.map((f) => f.map((v: string) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
-      const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'registro-evento-gempro.csv';
-      a.click();
-    });
-
-    btnGanador.addEventListener('click', async () => {
-      const registros = await traerRegistros();
-      if (!registros.length) { resultado.textContent = 'Todavía no hay registros.'; resultado.classList.remove('hidden'); return; }
-      const ganador = registros[Math.floor(Math.random() * registros.length)];
-      resultado.textContent = `🎉 Ganador: ${ganador.nombre} — ${ganador.correo}`;
-      resultado.classList.remove('hidden');
+    raiz.addEventListener('click', async (ev) => {
+      const boton = (ev.target as HTMLElement).closest<HTMLButtonElement>('button[data-csv], button[data-ganador]');
+      if (!boton) return;
+      const evento = boton.dataset.evento!;
+      const resultado = boton.closest('[data-tarjeta]')?.querySelector<HTMLElement>('[data-resultado]');
+      boton.disabled = true;
+      try {
+        const registros = await traer(evento);
+        if ('csv' in boton.dataset) {
+          const filas = [['Nombre', 'Correo', 'Teléfono', 'Fecha (Venezuela)'], ...registros.map((r: any) => [r.nombre, r.correo, r.telefono ?? '', fechaVE(r.creado_en)])];
+          const csv = filas.map((f: unknown[]) => f.map(celda).join(',')).join('\n');
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
+          a.download = `registro-${(boton.dataset.nombre || 'evento').replace(/[^\w\-]+/g, '-')}.csv`;
+          a.click();
+        } else if (resultado) {
+          const g = registros[Math.floor(Math.random() * registros.length)];
+          resultado.textContent = g ? `🎉 Ganador: ${g.nombre} — ${g.correo}` : 'Este evento no tiene registros.';
+          resultado.classList.remove('hidden');
+        }
+      } finally { boton.disabled = false; }
     });
   }
   document.addEventListener('astro:page-load', setup);
