@@ -10,8 +10,11 @@ import fotoFondo from '../assets/img/hero-slide-3.jpg';
 
 export const prerender = false;
 
-const { data: eventos } = await sb().from('eventos').select('id, inicio, fin, forzar_abierto').order('creado_en', { ascending: false });
-const abierto = eventoAbierto(eventoActual(eventos ?? []));
+const { data: eventos, error: sinTabla } = await sb().from('eventos').select('id, inicio, fin, forzar_abierto').order('creado_en', { ascending: false });
+// ponytail: transición hasta ejecutar supabase/fase6 — sin la tabla eventos, vale la configuración vieja.
+const abierto = sinTabla
+  ? eventoAbierto((await sb().from('evento_config').select('*').eq('id', true).maybeSingle()).data)
+  : eventoAbierto(eventoActual(eventos ?? []));
 ---
 <PanelBase title="Registro del evento">
   <nav slot="nav"></nav>
