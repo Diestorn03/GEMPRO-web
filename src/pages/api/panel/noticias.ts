@@ -29,11 +29,14 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const titulo = String(form.get('titulo') ?? '').trim().slice(0, 160);
   const contenido = String(form.get('contenido') ?? '').trim().slice(0, 8000);
   const publicado = form.get('publicado') === 'on';
-  if (!titulo || !contenido) return redirect('/panel/noticias?error=1', 303);
+  const volverError = (e: string) => redirect(id ? `/panel/noticias?editar=${id}&error=${e}` : `/panel/noticias?nueva=1&error=${e}`, 303);
+  if (!titulo || !contenido) return volverError('1');
 
   let imagenUrl = String(form.get('imagen_actual') ?? '') || null;
   const imagen = form.get('imagen');
-  if (imagen instanceof File && imagen.size > 0 && imagen.size <= 5 * 1024 * 1024 && imagen.type.startsWith('image/')) {
+  // Vercel corta las peticiones en 4,5 MB; el navegador reduce las fotos a 1600 px antes de enviarlas.
+  if (imagen instanceof File && imagen.size > 0 && (imagen.size > 4 * 1024 * 1024 || !imagen.type.startsWith('image/'))) return volverError('imagen');
+  if (imagen instanceof File && imagen.size > 0) {
     const ruta = `${Date.now()}-${imagen.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
     const { error: errSubida } = await sb().storage.from(BUCKET).upload(ruta, imagen, { contentType: imagen.type });
     if (!errSubida) imagenUrl = sb().storage.from(BUCKET).getPublicUrl(ruta).data.publicUrl;
@@ -43,6 +46,6 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const { error } = id
     ? await sb().from('noticias').update(datos).eq('id', id)
     : await sb().from('noticias').insert(datos);
-  if (error) { console.error('[panel/noticias] no se pudo guardar', error); return redirect('/panel/noticias?error=1', 303); }
+  if (error) { console.error('[panel/noticias] no se pudo guardar', error); return volverError('1'); }
   return volver;
 };

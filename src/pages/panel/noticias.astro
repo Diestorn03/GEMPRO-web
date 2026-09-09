@@ -25,6 +25,7 @@ const fecha = fechaVE;
       <div class="lg:col-span-2">
         <span class="eyebrow">{editando ? 'Editar noticia' : 'Nueva noticia'}</span>
         {error === '1' && <p class="mt-2 text-[13px] text-amber" role="alert">Falta el título o el contenido.</p>}
+        {error === 'imagen' && <p class="mt-2 text-[13px] text-amber" role="alert">La foto no se pudo usar: debe ser una imagen de hasta 4 MB. Vuelve a elegirla (se reduce sola) o prueba con otra.</p>}
       </div>
       {editando && <input type="hidden" name="id" value={editando.id} />}
       <input type="hidden" name="imagen_actual" value={editando?.imagen_url ?? ''} />
