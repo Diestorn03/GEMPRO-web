@@ -47,17 +47,22 @@ export const POST: APIRoute = async (ctx) => {
   try {
     const { error } = await sb().from('mensajes').insert({ nombre, empresa: empresa || null, correo, telefono: telefono || null, mensaje });
     if (error) throw error;
-    await registrarIntento(ip, 'contacto');
   } catch (err) {
     console.error('[contacto] no se pudo guardar el mensaje', err);
     return json({ ok: false, error: 'No pudimos registrar su mensaje. Escríbanos por WhatsApp.' }, 500);
   }
 
-  // El mensaje ya quedó guardado arriba pase lo que pase con el correo: si Resend falla o no
-  // está configurada la clave, el cliente igual ve "Recibido" y la consulta no se pierde.
+  // El mensaje ya quedó guardado arriba pase lo que pase de aquí en más: si el correo falla o no
+  // está configurado, el cliente igual ve "Recibido" y la consulta no se pierde. Van en paralelo
+  // (no uno detrás del otro) porque no dependen entre sí, pero la parte lenta de verdad es el
+  // propio envío por Gmail (1-3 s de apretón de manos SMTP) — eso no se evita desde aquí, ver el
+  // comentario al inicio de src/lib/correo.ts.
   // ponytail: mientras se prueba, los avisos van al correo de Diego, no al de GEMPRO (site.email).
   // Volver a `site.email` antes de darlo por listo para producción.
-  await avisarConsultaPorCorreo('cardozodiego512@gmail.com', { nombre, empresa, correo, telefono, mensaje });
+  await Promise.all([
+    registrarIntento(ip, 'contacto'),
+    avisarConsultaPorCorreo('cardozodiego512@gmail.com', { nombre, empresa, correo, telefono, mensaje }),
+  ]);
 
   return json({ ok: true, mensaje: 'Recibido. Un ingeniero le responderá con una propuesta de medición.' });
 };
