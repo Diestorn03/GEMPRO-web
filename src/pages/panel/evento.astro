@@ -77,19 +77,26 @@ const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[
             </div>
             <div class="min-w-0">
               <label class={campo} for="inicio">Abre (hora de Venezuela)</label>
-              <input type="datetime-local" name="inicio" id="inicio" value={aLocal(actual.inicio)} class="field w-full min-w-0" />
+              <input type="datetime-local" name="inicio" id="inicio" value={aLocal(actual.inicio)} data-bloqueado={abierto ? 'true' : 'false'} class="campo-fecha field w-full min-w-0" />
+              {abierto && <p class="mt-1.5 text-[12px] text-mist">El evento ya está en curso: solo se puede cambiar el cierre.</p>}
             </div>
             <div class="min-w-0">
               <label class={campo} for="fin">Cierra (hora de Venezuela)</label>
-              <input type="datetime-local" name="fin" id="fin" value={aLocal(actual.fin)} class="field w-full min-w-0" />
+              <input type="datetime-local" name="fin" id="fin" value={aLocal(actual.fin)} class="campo-fecha field w-full min-w-0" />
             </div>
             <div class="sm:col-span-2">
-              <label class={campo} for="forzar">Interruptor manual</label>
-              <select name="forzar" id="forzar" class="field">
-                <option value="auto" selected={forzarDe(actual) === 'auto'}>Automático según las fechas de arriba</option>
-                <option value="abierto" selected={forzarDe(actual) === 'abierto'}>Forzar abierto (ignora las fechas)</option>
-                <option value="cerrado" selected={forzarDe(actual) === 'cerrado'}>Forzar cerrado (ignora las fechas)</option>
-              </select>
+              <span class={campo}>Interruptor manual</span>
+              <div class="grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="Interruptor manual">
+                <label class="segmento"><input type="radio" name="forzar" value="auto" class="sr-only" checked={forzarDe(actual) === 'auto'} /> Automático</label>
+                <label class="segmento"><input type="radio" name="forzar" value="abierto" class="sr-only" checked={forzarDe(actual) === 'abierto'} /> Forzar abierto</label>
+                <label class="segmento"><input type="radio" name="forzar" value="cerrado" class="sr-only" checked={forzarDe(actual) === 'cerrado'} /> Forzar cerrado</label>
+              </div>
+              {forzarDe(actual) !== 'auto' && (
+                <p class="mt-2 rounded-md border border-amber/40 bg-amber/10 px-3 py-2 text-[13px] text-amber" role="alert">
+                  {forzarDe(actual) === 'abierto' ? 'Forzado abierto: ' : 'Forzado cerrado: '}
+                  las fechas de arriba no tienen efecto mientras este interruptor no esté en "Automático".
+                </p>
+              )}
             </div>
             <button type="submit" class="btn-primary self-start sm:col-span-2" data-magnetic>Guardar</button>
           </form>
@@ -107,11 +114,11 @@ const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[
         </div>
         <div class="min-w-0">
           <label class={campo} for="nuevo-inicio">Abre (hora de Venezuela)</label>
-          <input type="datetime-local" name="inicio" id="nuevo-inicio" required class="field w-full min-w-0" />
+          <input type="datetime-local" name="inicio" id="nuevo-inicio" required class="campo-fecha field w-full min-w-0" />
         </div>
         <div class="min-w-0">
           <label class={campo} for="nuevo-fin">Cierra (hora de Venezuela)</label>
-          <input type="datetime-local" name="fin" id="nuevo-fin" required class="field w-full min-w-0" />
+          <input type="datetime-local" name="fin" id="nuevo-fin" required class="campo-fecha field w-full min-w-0" />
         </div>
         <button type="submit" class="btn-ghost self-start border border-white/15 sm:col-span-2">Crear evento</button>
       </form>
@@ -207,5 +214,81 @@ const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[
       } finally { boton.disabled = false; }
     });
   }
+
+  /**
+   * Reemplaza el selector nativo de datetime-local por cinco <select> (día, mes, año, hora,
+   * minuto): en Android ese selector no lo pinta la página, lo pinta un diálogo NATIVO del
+   * sistema operativo (Chromium se lo delega vía JNI); en teléfonos Xiaomi/Redmi (MIUI/HyperOS)
+   * ese diálogo sale re-vestido con el tema propio del fabricante — fondo claro, texto casi
+   * invisible — y ningún CSS de esta página puede alcanzarlo porque vive fuera de lo que el
+   * navegador renderiza. El input original se queda en el DOM, sr-only (fuera de la vista y del
+   * tabulado, pero presente para el navegador), y sigue mandando el mismo texto
+   * "AAAA-MM-DDTHH:MM" de siempre: cero cambios en el backend ni en aLocal/aIso.
+   */
+  function setupCamposFecha() {
+    const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    const dd = (n: number) => String(n).padStart(2, '0');
+    const diasEnMes = (mes: number, anio: number) => new Date(anio, mes, 0).getDate();
+    const anioBase = new Date().getFullYear();
+    const opcion = (valor: string, texto: string) => { const o = document.createElement('option'); o.value = valor; o.textContent = texto; return o; };
+    const crearSelect = (etiqueta: string) => { const s = document.createElement('select'); s.className = 'field !px-1 !py-2.5 text-center text-[12px]'; s.setAttribute('aria-label', etiqueta); return s; };
+
+    document.querySelectorAll<HTMLInputElement>('input.campo-fecha').forEach((input) => {
+      if (input.dataset.mejorado) return;
+      input.dataset.mejorado = '1';
+      input.classList.add('sr-only');
+      input.tabIndex = -1;
+      input.setAttribute('aria-hidden', 'true');
+
+      const ahora = new Date();
+      const [anioVal, mesVal, diaVal, horaVal, minVal] = input.value
+        ? [Number(input.value.slice(0, 4)), Number(input.value.slice(5, 7)), Number(input.value.slice(8, 10)), Number(input.value.slice(11, 13)), Number(input.value.slice(14, 16))]
+        : [ahora.getFullYear(), ahora.getMonth() + 1, ahora.getDate(), 12, 0];
+
+      const selDia = crearSelect('Día');
+      const selMes = crearSelect('Mes');
+      const selAnio = crearSelect('Año');
+      const selHora = crearSelect('Hora');
+      const selMin = crearSelect('Minuto');
+
+      for (let a = anioBase - 1; a <= anioBase + 3; a++) selAnio.append(opcion(String(a), String(a)));
+      MESES.forEach((m, i) => selMes.append(opcion(dd(i + 1), m)));
+      for (let h = 0; h < 24; h++) selHora.append(opcion(dd(h), dd(h)));
+      for (let m = 0; m < 60; m++) selMin.append(opcion(dd(m), dd(m)));
+      selAnio.value = String(anioVal);
+      selMes.value = dd(mesVal);
+      selHora.value = dd(horaVal);
+      selMin.value = dd(minVal);
+
+      const llenarDias = () => {
+        const previo = selDia.value || dd(diaVal);
+        selDia.innerHTML = '';
+        const total = diasEnMes(Number(selMes.value), Number(selAnio.value));
+        for (let d = 1; d <= total; d++) selDia.append(opcion(dd(d), dd(d)));
+        selDia.value = Number(previo) <= total ? previo : dd(total);
+      };
+      llenarDias();
+
+      const escribir = () => {
+        llenarDias();
+        input.value = `${selAnio.value}-${selMes.value}-${selDia.value}T${selHora.value}:${selMin.value}`;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      };
+      [selDia, selMes, selAnio, selHora, selMin].forEach((s) => s.addEventListener('change', escribir));
+      escribir(); // dejar el input sincronizado desde ya, así "required" nunca lo bloquea por vacío
+
+      // El evento ya está en curso: no se debe poder mover cuándo abrió, solo cuándo cierra.
+      if (input.dataset.bloqueado === 'true') {
+        [selDia, selMes, selAnio, selHora, selMin].forEach((s) => { s.disabled = true; });
+      }
+
+      const grupo = document.createElement('div');
+      grupo.className = 'mt-1.5 grid grid-cols-5 gap-1';
+      grupo.append(selDia, selMes, selAnio, selHora, selMin);
+      input.insertAdjacentElement('afterend', grupo);
+    });
+  }
+
   document.addEventListener('astro:page-load', setup);
+  document.addEventListener('astro:page-load', setupCamposFecha);
 </script>

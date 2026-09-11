@@ -1,7 +1,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { COOKIE, contrasenaCorrecta, opcionesCookie, valorCookie } from '../../lib/auth';
+import { COOKIE, SESION_SEGUNDOS, contrasenaCorrecta, opcionesCookie, valorCookie } from '../../lib/auth';
 import { bloqueado, ipDe, registrarIntento } from '../../lib/limite';
 
 export const POST: APIRoute = async (ctx) => {
@@ -11,6 +11,7 @@ export const POST: APIRoute = async (ctx) => {
   const form = await request.formData();
   const intento = String(form.get('password') ?? '');
   if (!contrasenaCorrecta(intento)) { await registrarIntento(ip, 'entrar'); return redirect('/entrar?error=1', 303); }
-  cookies.set(COOKIE, valorCookie(), opcionesCookie(url));
+  const recordar = form.get('recordar') === 'on';
+  cookies.set(COOKIE, valorCookie(recordar), opcionesCookie(url, recordar ? SESION_SEGUNDOS : undefined));
   return redirect('/panel', 303);
 };

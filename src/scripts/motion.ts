@@ -59,6 +59,22 @@ function anchorLinks() {
   });
 }
 
+// Red de seguridad: en una página corta (el panel con pocos informes, un cliente recién creado)
+// puede que no haya scroll suficiente para que un ScrollTrigger "once" llegue a disparar nunca
+// — se calcula contra el alto de página en un instante que en móvil no siempre es el definitivo
+// (la barra de direcciones cambia el viewport después de cargar) — y el elemento se queda con
+// opacity:0 para siempre. 1,2 s tras cargar, cualquier tween que siga sin arrancar y cuyo
+// elemento ya esté a la vista se fuerza a su estado final; los que de verdad están más abajo
+// (el usuario aún no llegó ahí) se dejan intactos para su entrada normal al hacer scroll.
+const pendientes: { el: Element; tween: gsap.core.Tween }[] = [];
+function revisarPendientesLuego() {
+  setTimeout(() => {
+    for (const { el, tween } of pendientes) {
+      if (tween.progress() === 0 && el.getBoundingClientRect().top < window.innerHeight) tween.progress(1);
+    }
+  }, 1200);
+}
+
 function reveals() {
   gsap.utils.toArray<HTMLElement>('[data-reveal]').forEach((el) => {
     const dir = el.dataset.reveal || 'up';
@@ -68,7 +84,7 @@ function reveals() {
       x: dir === 'left' ? -48 : dir === 'right' ? 48 : 0,
       scale: dir === 'zoom' ? 0.94 : 1,
     };
-    gsap.fromTo(el, from, {
+    const tween = gsap.fromTo(el, from, {
       opacity: 1, x: 0, y: 0, scale: 1,
       duration: 1.05,
       ease: 'power3.out',
@@ -76,12 +92,13 @@ function reveals() {
       clearProps: 'transform',
       scrollTrigger: { trigger: el, start: 'top 88%', once: true },
     });
+    pendientes.push({ el, tween });
   });
 
   gsap.utils.toArray<HTMLElement>('[data-reveal-group]').forEach((group) => {
     const items = Array.from(group.children) as HTMLElement[];
     if (!items.length) return;
-    gsap.fromTo(items, { opacity: 0, y: 44 }, {
+    const tween = gsap.fromTo(items, { opacity: 0, y: 44 }, {
       opacity: 1, y: 0,
       duration: 0.95,
       ease: 'power3.out',
@@ -89,6 +106,7 @@ function reveals() {
       clearProps: 'transform',
       scrollTrigger: { trigger: group, start: 'top 86%', once: true },
     });
+    pendientes.push({ el: group, tween });
   });
 }
 
@@ -97,7 +115,7 @@ function splitHeadlines() {
     // aria: 'none' evita que SplitText añada aria-label a <span> (atributo prohibido en elementos genéricos).
     const split = SplitText.create(el, { type: 'lines', mask: 'lines', linesClass: 'split-line', autoSplit: true, aria: 'none' });
     el.style.visibility = 'visible';
-    gsap.from(split.lines, {
+    const tween = gsap.from(split.lines, {
       yPercent: 115,
       duration: 1.15,
       ease: 'power4.out',
@@ -105,6 +123,7 @@ function splitHeadlines() {
       delay: Number(el.dataset.delay || 0),
       scrollTrigger: { trigger: el, start: 'top 88%', once: true },
     });
+    pendientes.push({ el, tween });
   });
 }
 
@@ -115,13 +134,14 @@ function counters() {
     const suffix = el.dataset.suffix || '';
     const state = { v: 0 };
     el.textContent = `${prefix}0${suffix}`;
-    gsap.to(state, {
+    const tween = gsap.to(state, {
       v: target,
       duration: 1.0,
       ease: 'power2.out',
       scrollTrigger: { trigger: el, start: 'top 85%', once: true },
       onUpdate: () => { el.textContent = `${prefix}${Math.round(state.v)}${suffix}`; },
     });
+    pendientes.push({ el, tween });
   });
 }
 
@@ -208,6 +228,7 @@ function init() {
     anchorLinks();
     root.classList.add('motion-ready');
     ScrollTrigger.refresh();
+    revisarPendientesLuego();
   };
   // Las líneas del titular dependen de la fuente ya cargada.
   if (document.fonts?.ready) document.fonts.ready.then(run, run);
@@ -220,6 +241,7 @@ function destroy() {
   ScrollTrigger.getAll().forEach((t) => t.kill());
   teardownLenis();
   document.documentElement.classList.remove('motion-ready');
+  pendientes.length = 0;
 }
 
 // Astro View Transitions: reinicia en cada página.

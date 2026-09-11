@@ -41,7 +41,8 @@ if (autenticado) {
           <p class="mb-7 mt-2 text-[14px] text-fog">Ingrese la contraseña que le compartió GEMPRO.</p>
           {mensajeError && <p class="mb-4 rounded border border-amber/40 bg-amber/10 px-3 py-2 text-[13px] text-amber" role="alert">{mensajeError}</p>}
           <label for="password" class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Contraseña</label>
-          <input id="password" name="password" type="password" required autofocus class="field mb-5" />
+          <input id="password" name="password" type="password" required autofocus class="field mb-4" />
+          <label class="mb-5 flex items-center gap-2.5 text-[13px] text-fog"><input type="checkbox" name="recordar" class="check" /> Recordar este dispositivo por 30 días</label>
           <button type="submit" class="btn-primary h-[54px] w-full" data-magnetic>Entrar</button>
         </form>
       </div>

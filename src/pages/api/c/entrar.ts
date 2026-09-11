@@ -1,7 +1,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { COOKIE_CLIENTE, contrasenaClienteCorrecta, opcionesCookie, valorCookieCliente } from '../../../lib/auth';
+import { COOKIE_CLIENTE, SESION_SEGUNDOS, contrasenaClienteCorrecta, opcionesCookie, valorCookieCliente } from '../../../lib/auth';
 import { bloqueado, ipDe, registrarIntento } from '../../../lib/limite';
 import { sb } from '../../../lib/supabase';
 
@@ -21,6 +21,8 @@ export const POST: APIRoute = async (ctx) => {
     return redirect(`/c/${token}?error=1`, 303);
   }
 
-  cookies.set(COOKIE_CLIENTE, valorCookieCliente(cliente.id, cliente.password_sal), opcionesCookie(url));
+  // Sin marcar "recordar este dispositivo": sesión corta y la cookie se borra al cerrar el navegador.
+  const recordar = form.get('recordar') === 'on';
+  cookies.set(COOKIE_CLIENTE, valorCookieCliente(cliente.id, cliente.password_sal, recordar), opcionesCookie(url, recordar ? SESION_SEGUNDOS : undefined));
   return redirect(`/c/${token}`, 303);
 };

@@ -14,6 +14,10 @@ import type { AstroCookies } from 'astro';
 export const COOKIE = 'gp_sesion';
 export const COOKIE_CLIENTE = 'gp_cliente';
 export const SESION_SEGUNDOS = 60 * 60 * 24 * 30;
+// /entrar y el portal de clientes, sin marcar "recordar este dispositivo": la cookie no lleva
+// Max-Age (se borra al cerrar el navegador del todo) y, por si acaso quedara abierta más tiempo
+// del esperado, la propia firma deja de valer a las 8 horas.
+const SESION_SIN_RECORDAR_SEGUNDOS = 60 * 60 * 8;
 
 function secreto(): string {
   const s = (import.meta.env.AUTH_SECRET || process.env.AUTH_SECRET) || '';
@@ -35,14 +39,15 @@ function firmaVigente(exp: string | undefined, firma: string | undefined, texto:
   return igual(firma, firmar(texto(exp)));
 }
 
-function vencimiento(): string {
-  return String(Date.now() + SESION_SEGUNDOS * 1000);
+function vencimiento(segundos: number = SESION_SEGUNDOS): string {
+  return String(Date.now() + segundos * 1000);
 }
 
 /** Opciones comunes de las cookies de sesión. `secure` cuando la petición llegó por https
- *  (siempre en Vercel); en local por http la cookie no se enviaría y no se podría entrar. */
-export function opcionesCookie(url: URL) {
-  return { httpOnly: true, sameSite: 'lax' as const, secure: url.protocol === 'https:', path: '/', maxAge: SESION_SEGUNDOS };
+ *  (siempre en Vercel); en local por http la cookie no se enviaría y no se podría entrar.
+ *  `maxAge` en `undefined` deja la cookie sin Max-Age: el navegador la borra al cerrarse. */
+export function opcionesCookie(url: URL, maxAge: number | undefined = SESION_SEGUNDOS) {
+  return { httpOnly: true, sameSite: 'lax' as const, secure: url.protocol === 'https:', path: '/', maxAge };
 }
 
 export function contrasenaCorrecta(intento: string): boolean {
@@ -52,8 +57,8 @@ export function contrasenaCorrecta(intento: string): boolean {
   return igual(intento.trim(), real);
 }
 
-export function valorCookie(): string {
-  const exp = vencimiento();
+export function valorCookie(recordar: boolean = true): string {
+  const exp = vencimiento(recordar ? SESION_SEGUNDOS : SESION_SIN_RECORDAR_SEGUNDOS);
   return `${exp}.${firmar('gempro-panel:' + exp)}`;
 }
 
@@ -81,9 +86,11 @@ export function contrasenaClienteCorrecta(intento: string, sal: string, hashGuar
 
 /** Sesión de UN cliente del portal: la cookie firma su propio id, así que no sirve para
  *  entrar a la página de otro cliente aunque se copie o se adivine el token de la URL. */
-/** La firma incluye la sal de la contraseña: al cambiarla (nueva sal) las sesiones abiertas dejan de valer. */
-export function valorCookieCliente(clienteId: string, sal: string): string {
-  const exp = vencimiento();
+/** La firma incluye la sal de la contraseña: al cambiarla (nueva sal) las sesiones abiertas dejan de valer.
+ *  `recordar` en false usa la vigencia corta (ver SESION_SIN_RECORDAR_SEGUNDOS), para cuando la
+ *  cookie no marca "recordar este dispositivo" y por eso tampoco lleva Max-Age. */
+export function valorCookieCliente(clienteId: string, sal: string, recordar: boolean): string {
+  const exp = vencimiento(recordar ? SESION_SEGUNDOS : SESION_SIN_RECORDAR_SEGUNDOS);
   return `${clienteId}.${exp}.${firmar(`cliente:${clienteId}:${sal}:${exp}`)}`;
 }
 export function clienteAutenticado(cookies: AstroCookies, clienteId: string, sal: string): boolean {

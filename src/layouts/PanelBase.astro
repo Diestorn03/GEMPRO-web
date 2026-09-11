@@ -26,6 +26,11 @@ const fullTitle = title ? `${title} · ${site.name}` : site.name;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
+    <!-- La propiedad CSS color-scheme (.field, más abajo) no le alcanza a Safari/iOS para pintar
+         en oscuro la hoja completa del selector nativo de fecha y hora (solo el recuadro del
+         campo); esta meta etiqueta sí controla esa hoja — sin ella salía clara con texto casi
+         invisible encima del panel oscuro. -->
+    <meta name="color-scheme" content="dark" />
     <title>{fullTitle}</title>
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
