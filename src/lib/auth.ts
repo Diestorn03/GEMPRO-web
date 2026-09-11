@@ -8,7 +8,7 @@
  * - El valor de cada cookie lleva su propia fecha de vencimiento firmada: una cookie copiada
  *   deja de servir a los 30 días aunque el navegador la conserve o alguien la reenvíe.
  */
-import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, scryptSync, timingSafeEqual } from 'node:crypto';
 import type { AstroCookies } from 'astro';
 
 export const COOKIE = 'gp_sesion';
@@ -62,13 +62,21 @@ export function estaAutenticado(cookies: AstroCookies): boolean {
   return firmaVigente(exp, firma, (e) => 'gempro-panel:' + e);
 }
 
-/** Contraseña propia de cada cliente del portal: hash sha256 con sal aleatoria por cliente
- *  (no se reutiliza AUTH_SECRET aquí — cada cliente tiene su propio secreto de verdad). */
+/** Contraseña propia de cada cliente del portal: scrypt con sal aleatoria por cliente (no se
+ *  reutiliza AUTH_SECRET aquí — cada cliente tiene su propio secreto de verdad). scrypt es
+ *  lento a propósito: si la tabla se filtrara, un hash no se prueba por fuerza bruta en minutos
+ *  como uno sha256 simple. El prefijo "scrypt$" distingue los hashes nuevos de los hashes
+ *  sha256 de clientes creados antes de este cambio, que se siguen aceptando hasta que a ese
+ *  cliente le cambien la contraseña (que ya guarda en el formato nuevo). */
 export function hashContrasena(texto: string, sal: string): string {
+  return 'scrypt$' + scryptSync(texto, sal, 32).toString('hex');
+}
+function hashContrasenaLegado(texto: string, sal: string): string {
   return createHash('sha256').update(sal + ':' + texto).digest('hex');
 }
 export function contrasenaClienteCorrecta(intento: string, sal: string, hashGuardado: string): boolean {
-  return igual(hashContrasena(intento, sal), hashGuardado);
+  const actual = hashGuardado.startsWith('scrypt$') ? hashContrasena(intento, sal) : hashContrasenaLegado(intento, sal);
+  return igual(actual, hashGuardado);
 }
 
 /** Sesión de UN cliente del portal: la cookie firma su propio id, así que no sirve para

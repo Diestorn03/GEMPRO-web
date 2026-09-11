@@ -1,6 +1,4 @@
-| `/api/salud` | Diagnóstico: variables, latencia de la base, tabla de intentos, último latido del cron, migración fase 6 y si las contraseñas guardadas se pueden descifrar. |
-| `/api/latido` | Cron diario de Vercel (`vercel.json`): una escritura real para que Supabase Free no pause el proyecto. || `/panel/evento` | Eventos con historial: evento actual (fechas en hora de Venezuela, interruptor manual, contador, CSV y sorteo), "Nuevo evento", eventos anteriores con CSV/ganador/eliminar, y el QR permanente en dos estilos (PNG 2400 px y SVG). || `/panel` | Clientes: crear acceso (link + contraseña de mínimo 8 caracteres), buscador e historial de informes por cliente. |
-| `/panel/[id]` | Contraseña del cliente visible (cifrada con AUTH_SECRET), "Copiar link y contraseña" listo para WhatsApp, cambio de contraseña (cierra sus sesiones) y subida de informes directa a Storage: el servidor firma la URL, el navegador hace el PUT con progreso y luego registra la fila. Hasta 20 MB por archivo (por la función de Vercel solo pasarían 4,5 MB). |# GEMPRO · sitio web
+# GEMPRO · sitio web
 
 Rediseño de [gempro.com.ve](https://gempro.com.ve) en dirección "sala de control": portada cinematográfica, tipografía Archivo extendida, verde de marca como acento, animaciones de entrada en cada sección y formulario funcional.
 
@@ -22,10 +20,10 @@ Rediseño de [gempro.com.ve](https://gempro.com.ve) en dirección "sala de contr
 ```bash
 npm install            # una sola vez (y: npx playwright install chromium; copiar .env.example a .env)
 npm run dev            # desarrollo con recarga en http://localhost:4321
-npm run build          # compila para Vercel
-npm run preview        # vista previa local con astro preview
-npm test               # pruebas Playwright (compila antes con npm run build)
-npm run qa             # build + servidor + pruebas + capturas + Lighthouse (capturas/)
+npm run build          # compila para Vercel (el adaptador no soporta vista previa local:
+                        # astro preview no funciona con @astrojs/vercel; usar npm run dev)
+npm test               # pruebas Playwright contra astro dev en local (o BASE_URL=... contra un despliegue)
+npm run qa             # build + astro dev + pruebas + capturas + Lighthouse (capturas/)
 npm run check          # comprobación de tipos de Astro
 ```
 
@@ -78,7 +76,8 @@ panel/portal cuando existan) — nunca se expone al navegador.
 
 1. vercel.com → Add New Project → importar `Diestorn03/GEMPRO-web`. Astro se detecta solo.
 2. Variables de entorno: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `ADMIN_PASSWORD`, `AUTH_SECRET`
-   (ver `.env.example`).
+   (ver `.env.example`). Opcional: `CRON_SECRET` (Vercel la genera al guardarla) para que
+   `/api/latido` solo acepte la llamada firmada del cron y no cualquier visita anónima.
 3. Deploy. Cada `git push` a `main` publica solo. Cuando GEMPRO tenga su dominio propio, se
    agrega como dominio personalizado de este mismo proyecto — un solo lugar que apuntar.
 
@@ -94,13 +93,13 @@ Todo vive en este mismo proyecto como rutas renderizadas en el servidor (`export
 | `/panel/evento` | Fechas de apertura y cierre, interruptor manual, contador, CSV, ganador al azar y QR en dos estilos, estilizado (puntos redondeados, degradado azul, ojos circulares, isotipo suelto al centro) y clásico (máxima compatibilidad), en PNG 2400 px y SVG. |
 | `/c/[token]` | Portal de un cliente: pide su contraseña y lista sus informes con enlaces firmados de 5 minutos. |
 | `/evento` | Registro público por QR (nombre, correo, teléfono). Cerrado por defecto. |
-| `/api/salud` | Diagnóstico: qué variables llegaron, si la base responde y si existe la tabla del límite de intentos. |
+| `/api/salud` | Diagnóstico: qué variables llegaron, si la base responde y si existe la tabla del límite de intentos. Pide sesión de `/panel` o `?clave=` con el `AUTH_SECRET` (para poder diagnosticar incluso cuando `ADMIN_PASSWORD` es lo que falla). |
 
 Seguridad: contraseñas de clientes con hash y sal; cookies `HttpOnly`, `Secure` y `SameSite=Lax` con vencimiento firmado dentro del valor; comprobación de origen de Astro en todos los POST; límite de intentos por IP en `/api/entrar`, `/api/c/entrar`, `/api/evento` y `/api/contacto` (tabla `intentos_acceso`, ver `supabase/fase5-limite.sql`); cabeceras de seguridad y `Cache-Control: no-store` en las rutas privadas (`src/middleware.ts`); RLS activo y la `service_role` key solo en el servidor.
 
-Migraciones: `supabase/schema.sql` es la forma final para un proyecto nuevo; un proyecto existente ejecuta en orden `fase5-limite.sql` y `fase6-clientes-eventos.sql` (`/api/salud` dice cuál falta).
+Migraciones: `supabase/schema.sql` es la forma final para un proyecto nuevo; un proyecto existente ejecuta en orden `fase5-limite.sql`, `fase6-clientes-eventos.sql` y `fase7-limite-informes.sql` (`/api/salud` dice cuáles faltan).
 
-Scripts: `node scripts/generar-favicon.mjs` (favicon e iconos desde el isotipo), `node scripts/generar-isotipo.mjs` recorta el isotipo del logo maestro para el QR; `node scripts/probar-qr.mjs` verifica con dos decodificadores (ZXing y jsQR) que ambos estilos de QR se leen en PNG, PNG degradado y SVG. `vercel.json` programa una visita diaria a `/api/salud` para que el proyecto gratuito de Supabase no se pause por inactividad.
+Scripts: `node scripts/generar-favicon.mjs` (favicon e iconos desde el isotipo), `node scripts/generar-isotipo.mjs` recorta el isotipo del logo maestro para el QR; `node scripts/probar-qr.mjs` verifica con dos decodificadores (ZXing y jsQR) que ambos estilos de QR se leen en PNG, PNG degradado y SVG. `vercel.json` programa una visita diaria a `/api/latido` para que el proyecto gratuito de Supabase no se pause por inactividad.
 
 ## Antes de publicar
 

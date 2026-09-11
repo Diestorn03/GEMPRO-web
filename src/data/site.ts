@@ -13,6 +13,18 @@ export function withBase(path: string): string {
   return (base.endsWith('/') ? base.slice(0, -1) : base) + path;
 }
 
+/**
+ * Origen público real del despliegue actual: el dominio de producción de Vercel (el propio
+ * dominio de GEMPRO una vez asignado ahí, sin tocar código) en vez del origin de la petición.
+ * Así el QR "permanente" no queda apuntando a una URL de vista previa que Vercel puede borrar.
+ */
+export function origenPublico(origenPeticion: string): string {
+  // globalThis.process, no process: este módulo también exporta un `process` propio (los pasos
+  // de la sección "Nuestro proceso") que taparía el global de Node en todo el archivo.
+  const produccion = globalThis.process?.env.VERCEL_PROJECT_PRODUCTION_URL;
+  return produccion ? `https://${produccion}` : origenPeticion;
+}
+
 export const site = {
   name: 'GEMPRO',
   legalName: 'GEMPRO S.A.',

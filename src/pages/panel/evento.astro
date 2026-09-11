@@ -5,6 +5,7 @@ import { estaAutenticado } from '../../lib/auth';
 import { sb } from '../../lib/supabase';
 import { aLocal, eventoAbierto, eventoActual } from '../../lib/evento';
 import { fechaHoraVE } from '../../lib/fechas';
+import { origenPublico } from '../../data/site';
 
 export const prerender = false;
 
@@ -31,7 +32,7 @@ const p = Astro.url.searchParams;
 const aviso = p.get('guardado') ? 'Evento guardado.' : p.get('creado') ? 'Evento creado.' : p.get('eliminado') ? 'Evento eliminado junto con sus registros.' : '';
 const error = p.get('error') === '1';
 
-const urlEvento = `${Astro.url.origin}/evento`;
+const urlEvento = `${origenPublico(Astro.url.origin)}/evento`;
 const [qrGempro, qrClasico] = await Promise.all([qrPngCacheado(urlEvento, 'gempro', 480), qrPngCacheado(urlEvento, 'clasico', 480)]);
 const dataUrl = (b: Buffer) => 'data:image/png;base64,' + b.toString('base64');
 const campo = 'mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog';
@@ -173,7 +174,12 @@ const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[
     if (!raiz || raiz.dataset.eventosListo) return;
     raiz.dataset.eventosListo = '1';
 
-    const traer = async (evento: string) => (await fetch(`/api/panel/evento?evento=${evento}`)).json();
+    const traer = async (evento: string) => {
+      const res = await fetch(`/api/panel/evento?evento=${evento}`);
+      if (res.status === 401) { location.href = '/entrar'; throw new Error('Sesión vencida'); }
+      if (!res.ok) throw new Error(`Respuesta ${res.status}`);
+      return res.json();
+    };
     // Celdas que empiezan por = + - @ se prefijan con ' para que Excel no las ejecute como fórmula.
     const celda = (v: unknown) => { const s = String(v ?? ''); return `"${(/^[=+\-@]/.test(s) ? "'" + s : s).replace(/"/g, '""')}"`; };
     const fechaVE = (iso: string) => new Date(iso).toLocaleString('es-VE', { timeZone: 'America/Caracas' });

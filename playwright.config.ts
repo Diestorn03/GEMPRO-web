@@ -1,8 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Pruebas de extremo a extremo contra el sitio compilado (npm run build) servido por Node.
- * BASE_URL permite apuntar a un servidor ya levantado; si no, Playwright arranca uno.
+ * Pruebas de extremo a extremo. BASE_URL permite apuntar a un servidor ya levantado (por
+ * ejemplo, un despliegue de Vercel); si no, Playwright arranca `astro dev` en local. No
+ * `astro preview`: el adaptador de Vercel no lo soporta (no hay servidor único que levantar
+ * fuera de Vercel), así que se prueba contra las mismas rutas de servidor vía dev.
  */
 const baseURL = process.env.BASE_URL || 'http://127.0.0.1:4321';
 
@@ -22,10 +24,9 @@ export default defineConfig({
   webServer: process.env.BASE_URL
     ? undefined
     : {
-        command: 'node server.mjs',
+        command: 'npx astro dev --port 4321 --host 127.0.0.1',
         url: baseURL,
         reuseExistingServer: true,
-        env: { HOST: '127.0.0.1', PORT: '4321' },
         timeout: 60_000,
       },
   projects: [

@@ -13,7 +13,7 @@ const { data: noticia } = await sb().from('noticias').select('*').eq('id', id).e
 // Oculta o eliminada: de vuelta a la lista, en vez de un 'No encontrado' en texto plano.
 if (!noticia) return Astro.redirect('/noticias', 303);
 
-const fecha = fechaVE;
+const fecha = fechaVE(noticia.creado_en);
 const parrafos = noticia.contenido.split('\n').map((p: string) => p.trim()).filter(Boolean);
 ---
 <Base title={noticia.titulo} description={noticia.contenido.slice(0, 160)}>

@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview",
     "qa": "node scripts/qa.mjs",
     "capturas": "node scripts/capturas.mjs",
     "check": "astro check",

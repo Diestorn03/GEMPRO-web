@@ -13,6 +13,23 @@ export default defineConfig({
   site: 'https://gempro.com.ve',
   output: 'static',
   adapter: vercel(),
+  // URLs del sitio anterior (indexadas por Google): sin esto cada una devuelve 404 y se
+  // pierde el posicionamiento acumulado. Incluye las variantes /phone/ del sitio viejo.
+  redirects: {
+    '/index.html': '/',
+    '/contacto.html': '/#contacto',
+    '/nosotros.html': '/nosotros',
+    '/servicios.html': '/servicios',
+    '/productos.html': '/productos',
+    '/adiestramiento.html': '/#adiestramiento',
+    '/eventos.html': '/evento',
+    '/phone/index.html': '/',
+    '/phone/contacto.html': '/#contacto',
+    '/phone/nosotros.html': '/nosotros',
+    '/phone/servicios.html': '/servicios',
+    '/phone/adiestramiento.html': '/#adiestramiento',
+    '/phone/eventos.html': '/evento',
+  },
   vite: {
     plugins: [tailwindcss()],
   },

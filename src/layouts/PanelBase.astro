@@ -81,7 +81,9 @@ const fullTitle = title ? `${title} · ${site.name}` : site.name;
         if (boton) { boton.disabled = true; boton.dataset.texto = boton.textContent || ''; boton.textContent = 'Un momento…'; }
         try {
           const res = await fetch(form.action, { method: form.method || 'post', body: new FormData(form), headers: { 'X-Peticion-Ajax': '1' } });
-          location.href = res.headers.get('X-Redirigir') || res.url;
+          const redirigir = res.headers.get('X-Redirigir');
+          if (!redirigir && !res.ok) throw new Error(`Respuesta ${res.status}`);
+          location.href = redirigir || res.url;
         } catch {
           if (boton) { boton.disabled = false; boton.textContent = boton.dataset.texto || 'Enviar'; }
           alert('No se pudo procesar la solicitud. Intenta de nuevo.');

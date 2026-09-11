@@ -13,7 +13,10 @@ if (!process.argv.includes('--no-build')) {
   if (b.status !== 0) process.exit(b.status);
 }
 
-const server = spawn('node', ['server.mjs'], { env: { ...process.env, HOST: '127.0.0.1', PORT }, stdio: ['ignore', 'pipe', 'pipe'] });
+// astro dev, no `node server.mjs`: ese archivo servía el build de un adaptador de Node que ya
+// no existe (se migró a @astrojs/vercel, que no soporta `astro preview` en local). astro dev
+// ejecuta las mismas rutas de servidor sin depender de ningún adaptador.
+const server = spawn(npx, ['astro', 'dev', '--port', PORT, '--host', '127.0.0.1'], { shell: process.platform === 'win32', stdio: ['ignore', 'pipe', 'pipe'] });
 server.stdout.on('data', (d) => process.stdout.write(`[server] ${d}`));
 server.stderr.on('data', (d) => process.stderr.write(`[server] ${d}`));
 for (let i = 0; i < 40; i++) {

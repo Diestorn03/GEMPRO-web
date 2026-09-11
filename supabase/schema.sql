@@ -64,7 +64,9 @@ alter table informes enable row level security;
 
 -- Bucket privado para los informes técnicos (a diferencia del bucket público "archivos" de Kindra:
 -- estos son documentos internos del cliente y no deben quedar accesibles por URL directa).
-insert into storage.buckets (id, name, public) values ('informes-tecnicos', 'informes-tecnicos', false);
+-- file_size_limit: el límite de 20 MB de /panel/[id] hoy solo lo revisa el navegador; esto lo
+-- hace cumplir el propio bucket aunque alguien llame a la ruta de subida sin pasar por el panel.
+insert into storage.buckets (id, name, public, file_size_limit) values ('informes-tecnicos', 'informes-tecnicos', false, 20971520);
 -- Sin políticas de storage para el rol anon: todo acceso (subir, listar, descargar) pasa por
 -- rutas del servidor con la service_role key, que evita RLS por diseño.
 

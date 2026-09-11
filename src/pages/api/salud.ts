@@ -3,19 +3,30 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sb } from '../../lib/supabase';
 import { descifrar } from '../../lib/cifrado';
+import { estaAutenticado } from '../../lib/auth';
 
 /**
  * Chequeo de configuración en producción. NO expone valores, solo si cada variable llegó al
  * servidor — sirve para distinguir "la contraseña que escribí no es la configurada" de
  * "la variable no está configurada", sin entrar al panel de Vercel.
+ *
+ * Acceso: con sesión de /panel ya abierta, o con ?clave=AUTH_SECRET (para diagnosticar
+ * justo cuando ADMIN_PASSWORD no deja entrar, que es cuando más hace falta este endpoint).
  */
-export const GET: APIRoute = async () => {
+export const GET: APIRoute = async ({ cookies, url }) => {
   const v = (k: string) => (import.meta.env as Record<string, string | undefined>)[k] || process.env[k] || '';
+  const autSecret = v('AUTH_SECRET').trim();
+  if (!estaAutenticado(cookies) && (!autSecret || url.searchParams.get('clave') !== autSecret)) {
+    return new Response('No autorizado', { status: 401 });
+  }
   // Consulta real a la base (solo cuenta filas): distingue "variable puesta" de "conexión que funciona".
   let base_de_datos = 'sin probar';
   let latencia_bd_ms = -1;
   const clave = v('SUPABASE_SERVICE_KEY');
-  const claveEnmascarada = /[•*]/.test(clave) || (clave.length > 0 && clave.length < 100);
+  // Las claves nuevas de Supabase (sb_secret_...) miden ~41 caracteres; solo el formato JWT
+  // legado pasa de 100. El único indicio fiable de una clave pegada a medias es que traiga
+  // el carácter de enmascarado del panel de Supabase.
+  const claveEnmascarada = /[•*]/.test(clave);
   try {
     if (claveEnmascarada) throw new Error('SUPABASE_SERVICE_KEY parece pegada enmascarada o incompleta (contiene "•" o es muy corta). Copiar la clave completa desde Supabase → Project Settings → API → service_role → "Reveal".');
     const t0 = Date.now();
