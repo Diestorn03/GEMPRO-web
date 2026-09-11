@@ -103,6 +103,10 @@ export async function avisarConsultaPorCorreo(destino: string, c: Consulta): Pro
       subject: `Nueva consulta de ${c.nombre}${c.empresa ? ' · ' + c.empresa : ''}`,
       text: texto,
       html: html(c),
+      // base64 en vez de la codificación por defecto (quoted-printable): un correo HTML tiene
+      // muchísimos "=" en los atributos (style="...", width="..."), y quoted-printable trata
+      // el "=" como carácter especial — base64 codifica todo de una vez, sin ese riesgo.
+      encoding: 'base64',
     });
   } catch (e) {
     console.error('[correo] no se pudo enviar el aviso de la consulta', e);

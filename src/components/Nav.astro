@@ -5,6 +5,12 @@ import { nav, site, withBase } from '../data/site';
 
 interface Props { transparent?: boolean }
 const { transparent = true } = Astro.props;
+
+// Resalta en el header la página en la que está el visitante (Servicios, Nosotros, Productos,
+// Noticias), para orientarlo — sin barra final, así "/servicios" y "/servicios/" cuentan igual.
+const sinBarraFinal = (p: string) => p.replace(/\/$/, '') || '/';
+const rutaActual = sinBarraFinal(Astro.url.pathname);
+const esActual = (href: string) => sinBarraFinal(href) === rutaActual;
 ---
 <header
   data-nav
@@ -21,7 +27,11 @@ const { transparent = true } = Astro.props;
 
     <nav aria-label="Principal" class="hidden items-center gap-9 lg:flex">
       {nav.map((item) => (
-        <a href={item.href} class="text-[13px] font-semibold uppercase tracking-[0.14em] text-white/90 transition-colors hover:text-neon">{item.label}</a>
+        <a
+          href={item.href}
+          aria-current={esActual(item.href) ? 'page' : undefined}
+          class:list={['text-[13px] font-semibold uppercase tracking-[0.14em] transition-colors hover:text-neon', esActual(item.href) ? 'text-neon' : 'text-white/90']}
+        >{item.label}</a>
       ))}
       <a href={withBase('/#contacto')} class="rounded-[3px] bg-green px-6 py-3.5 text-[13px] font-extrabold uppercase tracking-[0.1em] text-ink transition-[background-color] duration-300 hover:bg-neon" data-magnetic>Solicitar diagnóstico</a>
     </nav>
@@ -41,7 +51,12 @@ const { transparent = true } = Astro.props;
   <div id="menu-movil" class="menu-panel fixed inset-0 z-[55] hidden flex-col overflow-y-auto bg-ink/95 px-6 pt-24 pb-[calc(100px+env(safe-area-inset-bottom))] backdrop-blur-lg md:pb-10 lg:hidden" data-lenis-prevent>
     <nav aria-label="Menú móvil" class="flex flex-col gap-2">
       {nav.map((item, i) => (
-        <a href={item.href} class="menu-link display border-b border-white/10 py-3 text-[clamp(28px,8.5vw,40px)] leading-none text-white" style={`--i:${i}`}>{item.label}</a>
+        <a
+          href={item.href}
+          aria-current={esActual(item.href) ? 'page' : undefined}
+          class:list={['menu-link display border-b border-white/10 py-3 text-[clamp(28px,8.5vw,40px)] leading-none', esActual(item.href) ? 'text-neon' : 'text-white']}
+          style={`--i:${i}`}
+        >{item.label}</a>
       ))}
       <a href={withBase('/#contacto')} class="menu-link display mt-3 rounded-[3px] bg-green px-5 py-4 text-center text-[clamp(20px,6vw,28px)] leading-none text-ink" style="--i:4">Contacto</a>
     </nav>
