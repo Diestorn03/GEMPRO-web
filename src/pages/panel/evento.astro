@@ -233,7 +233,10 @@ const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[
     const opcion = (valor: string, texto: string) => { const o = document.createElement('option'); o.value = valor; o.textContent = texto; return o; };
     const crearSelect = (etiqueta: string) => {
       const s = document.createElement('select');
-      s.className = 'field !px-1.5 !py-3 text-center text-[13px]';
+      // !bg-none: select.field dibuja una flechita a 14px del borde derecho; en un campo así de
+      // angosto (5 en una fila de teléfono) cae encima del número. Sin flecha se lee limpio, y
+      // en el teléfono igual se abre el selector nativo al tocar.
+      s.className = 'field !bg-none !px-1.5 !py-3 text-center text-[13px]';
       s.setAttribute('aria-label', etiqueta);
       // El navegador móvil a veces restaura el valor que el <select> tenía la última vez que se
       // visitó esta página, por encima del que este script acaba de calcular — se ve bien en la
