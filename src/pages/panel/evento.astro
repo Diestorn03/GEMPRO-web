@@ -87,9 +87,9 @@ const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[
             <div class="sm:col-span-2">
               <span class={campo}>Interruptor manual</span>
               <div class="grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="Interruptor manual">
-                <label class="segmento"><input type="radio" name="forzar" value="auto" class="sr-only" checked={forzarDe(actual) === 'auto'} /> Automático</label>
-                <label class="segmento"><input type="radio" name="forzar" value="abierto" class="sr-only" checked={forzarDe(actual) === 'abierto'} /> Forzar abierto</label>
-                <label class="segmento"><input type="radio" name="forzar" value="cerrado" class="sr-only" checked={forzarDe(actual) === 'cerrado'} /> Forzar cerrado</label>
+                <label class="segmento"><input type="radio" name="forzar" value="auto" autocomplete="off" class="sr-only" checked={forzarDe(actual) === 'auto'} /> Automático</label>
+                <label class="segmento"><input type="radio" name="forzar" value="abierto" autocomplete="off" class="sr-only" checked={forzarDe(actual) === 'abierto'} /> Forzar abierto</label>
+                <label class="segmento"><input type="radio" name="forzar" value="cerrado" autocomplete="off" class="sr-only" checked={forzarDe(actual) === 'cerrado'} /> Forzar cerrado</label>
               </div>
               {forzarDe(actual) !== 'auto' && (
                 <p class="mt-2 rounded-md border border-amber/40 bg-amber/10 px-3 py-2 text-[13px] text-amber" role="alert">
@@ -231,7 +231,17 @@ const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[
     const diasEnMes = (mes: number, anio: number) => new Date(anio, mes, 0).getDate();
     const anioBase = new Date().getFullYear();
     const opcion = (valor: string, texto: string) => { const o = document.createElement('option'); o.value = valor; o.textContent = texto; return o; };
-    const crearSelect = (etiqueta: string) => { const s = document.createElement('select'); s.className = 'field !px-1 !py-2.5 text-center text-[12px]'; s.setAttribute('aria-label', etiqueta); return s; };
+    const crearSelect = (etiqueta: string) => {
+      const s = document.createElement('select');
+      s.className = 'field !px-1.5 !py-3 text-center text-[13px]';
+      s.setAttribute('aria-label', etiqueta);
+      // El navegador móvil a veces restaura el valor que el <select> tenía la última vez que se
+      // visitó esta página, por encima del que este script acaba de calcular — se ve bien en la
+      // pantalla pero no es el dato real, y además hace que el primer toque no "prenda" porque
+      // ya cree que ese es el valor. autocomplete="off" se lo desactiva.
+      s.autocomplete = 'off';
+      return s;
+    };
 
     document.querySelectorAll<HTMLInputElement>('input.campo-fecha').forEach((input) => {
       if (input.dataset.mejorado) return;
@@ -239,6 +249,9 @@ const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[
       input.classList.add('sr-only');
       input.tabIndex = -1;
       input.setAttribute('aria-hidden', 'true');
+      // Solo por si su posición absoluta llegara a superponerse con algo tocable: nunca debe
+      // interceptar un toque que iba dirigido a los selects de al lado.
+      input.style.pointerEvents = 'none';
 
       const ahora = new Date();
       const [anioVal, mesVal, diaVal, horaVal, minVal] = input.value
@@ -283,7 +296,7 @@ const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[
       }
 
       const grupo = document.createElement('div');
-      grupo.className = 'mt-1.5 grid grid-cols-5 gap-1';
+      grupo.className = 'mt-1.5 grid grid-cols-5 gap-1.5';
       grupo.append(selDia, selMes, selAnio, selHora, selMin);
       input.insertAdjacentElement('afterend', grupo);
     });
