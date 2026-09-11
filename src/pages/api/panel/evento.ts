@@ -2,7 +2,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { estaAutenticado } from '../../../lib/auth';
-import { aIso } from '../../../lib/evento';
+import { aIso, chocaCon } from '../../../lib/evento';
 import { sb } from '../../../lib/supabase';
 
 const UUID = /^[0-9a-f-]{36}$/;
@@ -14,11 +14,19 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const accion = String(form.get('_accion') ?? 'guardar');
   const id = String(form.get('id') ?? '');
   const nombre = String(form.get('nombre') ?? '').trim().slice(0, 120);
-  const inicio = aIso(String(form.get('inicio') ?? '').trim());
-  const fin = aIso(String(form.get('fin') ?? '').trim());
+  const inicioRaw = String(form.get('inicio') ?? '').trim();
+  const finRaw = String(form.get('fin') ?? '').trim();
+  const inicio = aIso(inicioRaw);
+  const fin = aIso(finRaw);
   const forzar = String(form.get('forzar') ?? 'auto'); // 'auto' | 'abierto' | 'cerrado'
   const forzar_abierto = forzar === 'abierto' ? true : forzar === 'cerrado' ? false : null;
   const volver = (q: string) => redirect(`/panel/evento?${q}`, 303);
+  /** Solo un evento a la vez: si las fechas (o el forzado abierto) se cruzan con otro evento, no se guarda. */
+  const choque = async (candidato: { id?: string; inicio: string | null; fin: string | null; forzar_abierto: boolean | null }) => {
+    const { data } = await sb().from('eventos').select('id, nombre, inicio, fin, forzar_abierto');
+    const otro = chocaCon(candidato, (data ?? []) as { id: string; nombre: string; inicio: string | null; fin: string | null; forzar_abierto: boolean | null }[]);
+    return otro ? volver(`error=2&con=${encodeURIComponent(otro.nombre)}`) : null;
+  };
 
   if (accion === 'eliminar') {
     if (UUID.test(id)) await sb().from('eventos').delete().eq('id', id);
@@ -26,11 +34,17 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   }
   if (accion === 'crear') {
     if (!nombre || !inicio || !fin || fin <= inicio) return volver('error=1');
+    const ocupado = await choque({ inicio, fin, forzar_abierto: null });
+    if (ocupado) return ocupado;
     const { error } = await sb().from('eventos').insert({ nombre, inicio, fin, forzar_abierto: null });
     if (error) { console.error('[panel/evento] no se pudo crear', error); return volver('error=1'); }
     return volver('creado=1');
   }
-  if (!UUID.test(id) || (inicio && fin && fin <= inicio)) return volver('error=1');
+  // Vacío se permite (evento "sin fechas"); escrito pero inválido (30 de febrero, formato raro) NO se
+  // guarda como vacío en silencio: da error y conserva las fechas que ya tenía.
+  if (!UUID.test(id) || (inicioRaw && !inicio) || (finRaw && !fin) || (inicio && fin && fin <= inicio)) return volver('error=1');
+  const ocupado = await choque({ id, inicio, fin, forzar_abierto });
+  if (ocupado) return ocupado;
   const { error } = await sb().from('eventos').update({ ...(nombre ? { nombre } : {}), inicio, fin, forzar_abierto }).eq('id', id);
   if (error) { console.error('[panel/evento] no se pudo guardar', error); return volver('error=1'); }
   return volver('guardado=1');

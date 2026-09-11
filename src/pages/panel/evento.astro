@@ -30,7 +30,8 @@ const rango = (e: Evento) => (e.inicio && e.fin ? `${fechaHoraVE(e.inicio)} → 
 
 const p = Astro.url.searchParams;
 const aviso = p.get('guardado') ? 'Evento guardado.' : p.get('creado') ? 'Evento creado.' : p.get('eliminado') ? 'Evento eliminado junto con sus registros.' : '';
-const error = p.get('error') === '1';
+const error = p.get('error');
+const con = p.get('con') ?? '';
 
 const urlEvento = `${origenPublico(Astro.url.origin)}/evento`;
 const [qrGempro, qrClasico] = await Promise.all([qrPngCacheado(urlEvento, 'gempro', 480), qrPngCacheado(urlEvento, 'clasico', 480)]);
@@ -44,7 +45,8 @@ const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[
   </span>
 
   {aviso && <p class="mb-6 rounded-md border border-neon/40 bg-neon/10 px-4 py-3 text-[14px] text-white" data-reveal="fade">{aviso}</p>}
-  {error && <p class="mb-6 rounded-md border border-amber/40 bg-amber/10 px-4 py-3 text-[14px] text-amber" role="alert">Revisa los datos: hace falta nombre, fecha de apertura y de cierre, y el cierre debe ser después de la apertura.</p>}
+  {error === '1' && <p class="mb-6 rounded-md border border-amber/40 bg-amber/10 px-4 py-3 text-[14px] text-amber" role="alert">Revisa los datos: hace falta nombre, fecha de apertura y de cierre, el cierre debe ser después de la apertura, y las fechas tienen que existir en el calendario (no hay 30 de febrero).</p>}
+  {error === '2' && <p class="mb-6 rounded-md border border-amber/40 bg-amber/10 px-4 py-3 text-[14px] text-amber" role="alert">Solo puede haber un evento a la vez. Esas fechas se cruzan con «{con}», que está abierto o programado para ese mismo período: ciérralo, ajusta sus fechas o elige otras para este.</p>}
   {abiertos.length > 1 && <p class="mb-6 rounded-md border border-amber/40 bg-amber/10 px-4 py-3 text-[14px] text-amber" role="alert">Hay {abiertos.length} eventos abiertos a la vez; el QR registra en «{actual!.nombre}». Cierra los demás para evitar confusiones.</p>}
 
   <div class="grid min-w-0 gap-6 lg:grid-cols-[1fr_340px]" data-reveal-group data-stagger="0.1">
@@ -246,6 +248,9 @@ const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[
       s.autocomplete = 'off';
       return s;
     };
+    type Estado = { anio: number; mes: number; dia: number; hora: number; min: number };
+    // Cada calendario se registra aquí para poder enlazar "Abre" con "Cierra" del mismo formulario.
+    const instancias = new Map<HTMLInputElement, { estado: Estado; escribir: () => void; boton: HTMLButtonElement; raiz: HTMLElement }>();
     const cerrarTodos = () => {
       document.querySelectorAll<HTMLElement>('.fecha-panel:not([hidden])').forEach((p) => {
         p.hidden = true;
@@ -356,6 +361,9 @@ const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[
         cerrarTodos();
         vista = { anio: estado.anio, mes: estado.mes };
         pintarDias();
+        // La hora pudo cambiar desde afuera (cuando "Abre" corre a "Cierra"): reflejarla al abrir.
+        selHora.value = dd(estado.hora);
+        selMin.value = dd(estado.min);
         panel.hidden = false;
         boton.setAttribute('aria-expanded', 'true');
       };
@@ -368,7 +376,55 @@ const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[
       });
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) { cerrar(); boton.focus(); } });
 
+      instancias.set(input, { estado, escribir, boton, raiz });
       escribir(); // deja el input sincronizado desde ya, así "required" nunca lo bloquea por vacío
+    });
+
+    // --- Reglas entre "Abre" y "Cierra" del mismo formulario ---
+    // Los días imposibles (30 de febrero) no pueden elegirse: la grilla solo dibuja los días reales
+    // del mes. Lo que sí puede pasar es que "Cierra" quede antes o igual que "Abre".
+    const aMinutos = (e: Estado) => Date.UTC(e.anio, e.mes - 1, e.dia, e.hora, e.min) / 60000;
+    document.querySelectorAll<HTMLFormElement>('form').forEach((form) => {
+      if (form.dataset.fechasListo) return;
+      const iniInput = form.querySelector<HTMLInputElement>('input.campo-fecha[name="inicio"]');
+      const finInput = form.querySelector<HTMLInputElement>('input.campo-fecha[name="fin"]');
+      const ini = iniInput && instancias.get(iniInput);
+      const fin = finInput && instancias.get(finInput);
+      if (!iniInput || !finInput || !ini || !fin) return;
+      form.dataset.fechasListo = '1';
+      const aviso = el('p', 'fecha-aviso', 'El cierre debe ser después de la apertura.');
+      aviso.setAttribute('role', 'alert');
+      aviso.hidden = true;
+      fin.raiz.append(aviso);
+      const valido = () => aMinutos(fin.estado) > aMinutos(ini.estado);
+      const revisar = () => {
+        const ok = valido();
+        aviso.hidden = ok;
+        fin.boton.setAttribute('aria-invalid', ok ? 'false' : 'true');
+      };
+      // Si "Abre" pasa por delante de "Cierra", "Cierra" se corre a una hora después (como en un
+      // calendario normal), en vez de dejar un estado inválido que solo se descubre al enviar.
+      const corregir = () => {
+        if (!valido()) {
+          const d = new Date(Date.UTC(ini.estado.anio, ini.estado.mes - 1, ini.estado.dia, ini.estado.hora + 1, ini.estado.min));
+          Object.assign(fin.estado, { anio: d.getUTCFullYear(), mes: d.getUTCMonth() + 1, dia: d.getUTCDate(), hora: d.getUTCHours(), min: d.getUTCMinutes() });
+          fin.escribir();
+        }
+        revisar();
+      };
+      iniInput.addEventListener('change', corregir);
+      finInput.addEventListener('change', revisar);
+      // Capture: corre antes del envío por fetch de PanelBase y lo frena si sigue inválido.
+      form.addEventListener('submit', (e) => {
+        if (valido()) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        revisar();
+        fin.boton.focus();
+      }, { capture: true });
+      // Formulario de crear (sin valores): "Cierra" arranca una hora después de "Abre". Si el evento
+      // ya traía fechas mal guardadas, se muestran tal cual con el aviso, sin cambiarlas a escondidas.
+      if (finInput.defaultValue) revisar(); else corregir();
     });
   }
 

@@ -260,6 +260,8 @@ li:hover > .outline-text { color: var(--color-neon); transform: translateY(-6px)
 .fecha-etiqueta { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-mist); margin-right: 4px; }
 .fecha-dos-puntos { color: var(--color-mist); font-weight: 700; }
 .fecha-boton:focus-visible, .fecha-nav:focus-visible, .fecha-dia:focus-visible { outline: 2px solid var(--color-neon); outline-offset: 2px; }
+/* "Cierra" antes o igual que "Abre": el botón toma el borde ámbar de .field[aria-invalid] y sale este aviso. */
+.fecha-aviso { margin-top: 6px; font-size: 12px; line-height: 1.4; color: var(--color-amber); }
 
 /* Controles nativos en oscuro. El calendario de datetime-local y la lista desplegable del <select>
    los pinta el navegador, no el CSS de la página: con color-scheme dark salen en modo oscuro y las
