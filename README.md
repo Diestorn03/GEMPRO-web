@@ -37,7 +37,8 @@ src/
                            Training, Presence, Contact, Nav, Footer, MobileBar
   pages/index.astro     ← inicio
   pages/servicios.astro, nosotros.astro, productos.astro, noticias.astro
-  pages/api/contacto.ts ← recibe el formulario y lo guarda en Supabase (tabla `mensajes`)
+  pages/api/contacto.ts ← recibe el formulario, lo guarda en Supabase (tabla `mensajes`) y avisa por correo (Gmail)
+  lib/correo.ts          ← aviso por correo de una consulta nueva (SMTP de Gmail, opcional vía GMAIL_USER/GMAIL_APP_PASSWORD)
   lib/supabase.ts       ← cliente de Supabase para el servidor (service_role, nunca al navegador)
   lib/auth.ts           ← sesión del panel privado y verificación de contraseña de cliente
   scripts/motion.ts     ← animaciones por atributos data-*
@@ -77,7 +78,11 @@ panel/portal cuando existan) — nunca se expone al navegador.
 1. vercel.com → Add New Project → importar `Diestorn03/GEMPRO-web`. Astro se detecta solo.
 2. Variables de entorno: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `ADMIN_PASSWORD`, `AUTH_SECRET`
    (ver `.env.example`). Opcional: `CRON_SECRET` (Vercel la genera al guardarla) para que
-   `/api/latido` solo acepte la llamada firmada del cron y no cualquier visita anónima.
+   `/api/latido` solo acepte la llamada firmada del cron y no cualquier visita anónima; y
+   `GMAIL_USER` + `GMAIL_APP_PASSWORD` (una cuenta de Gmail dedicada, no hace falta Google
+   Workspace) para que el formulario de contacto avise por correo — sin ellas, la consulta se
+   sigue guardando en Supabase, pero nadie en GEMPRO se entera salvo que entre a mirar la base
+   de datos.
 3. Deploy. Cada `git push` a `main` publica solo. Cuando GEMPRO tenga su dominio propio, se
    agrega como dominio personalizado de este mismo proyecto — un solo lugar que apuntar.
 
@@ -97,7 +102,7 @@ Todo vive en este mismo proyecto como rutas renderizadas en el servidor (`export
 
 Seguridad: contraseñas de clientes con hash y sal; cookies `HttpOnly`, `Secure` y `SameSite=Lax` con vencimiento firmado dentro del valor; comprobación de origen de Astro en todos los POST; límite de intentos por IP en `/api/entrar`, `/api/c/entrar`, `/api/evento` y `/api/contacto` (tabla `intentos_acceso`, ver `supabase/fase5-limite.sql`); cabeceras de seguridad y `Cache-Control: no-store` en las rutas privadas (`src/middleware.ts`); RLS activo y la `service_role` key solo en el servidor.
 
-Migraciones: `supabase/schema.sql` es la forma final para un proyecto nuevo; un proyecto existente ejecuta en orden `fase5-limite.sql`, `fase6-clientes-eventos.sql` y `fase7-limite-informes.sql` (`/api/salud` dice cuáles faltan).
+Migraciones: `supabase/schema.sql` es la forma final para un proyecto nuevo; un proyecto existente ejecuta en orden `fase5-limite.sql`, `fase6-clientes-eventos.sql`, `fase7-limite-informes.sql` y `fase8-limite-noticias.sql` (`/api/salud` dice cuáles faltan).
 
 Scripts: `node scripts/generar-favicon.mjs` (favicon e iconos desde el isotipo), `node scripts/generar-isotipo.mjs` recorta el isotipo del logo maestro para el QR; `node scripts/probar-qr.mjs` verifica con dos decodificadores (ZXing y jsQR) que ambos estilos de QR se leen en PNG, PNG degradado y SVG. `vercel.json` programa una visita diaria a `/api/latido` para que el proyecto gratuito de Supabase no se pause por inactividad.
 

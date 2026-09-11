@@ -9,6 +9,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sb } from '../../lib/supabase';
 import { bloqueado, ipDe, registrarIntento } from '../../lib/limite';
+import { avisarConsultaPorCorreo } from '../../lib/correo';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
@@ -51,6 +52,12 @@ export const POST: APIRoute = async (ctx) => {
     console.error('[contacto] no se pudo guardar el mensaje', err);
     return json({ ok: false, error: 'No pudimos registrar su mensaje. Escríbanos por WhatsApp.' }, 500);
   }
+
+  // El mensaje ya quedó guardado arriba pase lo que pase con el correo: si Resend falla o no
+  // está configurada la clave, el cliente igual ve "Recibido" y la consulta no se pierde.
+  // ponytail: mientras se prueba, los avisos van al correo de Diego, no al de GEMPRO (site.email).
+  // Volver a `site.email` antes de darlo por listo para producción.
+  await avisarConsultaPorCorreo('cardozodiego512@gmail.com', { nombre, empresa, correo, telefono, mensaje });
 
   return json({ ok: true, mensaje: 'Recibido. Un ingeniero le responderá con una propuesta de medición.' });
 };

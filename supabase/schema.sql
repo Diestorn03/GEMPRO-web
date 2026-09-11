@@ -86,7 +86,9 @@ create policy "noticias públicas visibles para todos" on noticias for select us
 
 -- Bucket público para las fotos de las noticias (a diferencia de informes-tecnicos: estas SÍ
 -- deben verse en la web pública, igual que el bucket "archivos" de Kindra).
-insert into storage.buckets (id, name, public) values ('noticias-imagenes', 'noticias-imagenes', true);
+-- file_size_limit: el límite de 4 MB de /panel/noticias hoy solo lo revisa el servidor de la
+-- página; esto lo hace cumplir el propio bucket también.
+insert into storage.buckets (id, name, public, file_size_limit) values ('noticias-imagenes', 'noticias-imagenes', true, 4194304);
 
 -- ---------------------------------------------------------------
 -- Fase 5 (auditoría de seguridad): límite de intentos por IP y ruta.
