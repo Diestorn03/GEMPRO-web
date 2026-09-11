@@ -201,6 +201,66 @@ li:hover > .outline-text { color: var(--color-neon); transform: translateY(-6px)
 .segmento:has(:checked) { border-color: var(--color-neon); background-color: var(--color-neon); color: var(--color-ink); }
 .segmento:has(:focus-visible) { outline: 2px solid var(--color-neon); outline-offset: 2px; }
 
+/* Calendario propio del panel (fecha + hora), src/pages/panel/evento.astro. El selector nativo
+   de datetime-local lo pinta el sistema del teléfono con su propio tema (en Xiaomi/Redmi sale
+   claro e ilegible); este se ve igual en todos los dispositivos. */
+.fecha { position: relative; }
+/* Lleva también la clase `field` (puesta desde el JS): .field es una clase normal, no una
+   @utility, así que no se puede @apply desde aquí. */
+.fecha-boton {
+  @apply flex w-full cursor-pointer items-center justify-between gap-3 text-left;
+}
+.fecha-boton svg { flex-shrink: 0; color: var(--color-neon); }
+.fecha-boton:disabled { cursor: not-allowed; opacity: 0.55; }
+.fecha-boton:disabled svg { color: var(--color-mist); }
+.fecha-panel {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+  min-width: 280px;
+  max-width: 340px;
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background-color: var(--color-panel);
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.75);
+}
+.fecha-cabecera { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.fecha-mes { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-neon); }
+.fecha-nav {
+  width: 34px; height: 34px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  font-size: 20px; line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.fecha-nav:hover { border-color: var(--color-neon); }
+.fecha-semana, .fecha-dias { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.fecha-semana span { padding: 4px 0; text-align: center; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; color: var(--color-mist); }
+.fecha-dia {
+  height: 38px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  background-color: rgba(255, 255, 255, 0.03);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.fecha-dia:hover { border-color: rgba(255, 255, 255, 0.4); }
+.fecha-dia.es-hoy { border-color: rgba(61, 220, 132, 0.55); }
+.fecha-dia.elegido { background-color: var(--color-neon); border-color: var(--color-neon); color: var(--color-ink); font-weight: 700; }
+.fecha-dia.vacio { visibility: hidden; }
+.fecha-hora { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+.fecha-etiqueta { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-mist); margin-right: 4px; }
+.fecha-dos-puntos { color: var(--color-mist); font-weight: 700; }
+.fecha-boton:focus-visible, .fecha-nav:focus-visible, .fecha-dia:focus-visible { outline: 2px solid var(--color-neon); outline-offset: 2px; }
+
 /* Controles nativos en oscuro. El calendario de datetime-local y la lista desplegable del <select>
    los pinta el navegador, no el CSS de la página: con color-scheme dark salen en modo oscuro y las
    opciones dejan de quedar blanco sobre blanco. */
