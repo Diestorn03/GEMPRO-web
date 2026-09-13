@@ -33,8 +33,8 @@ export const site = {
   description:
     'Ingeniería de mantenimiento predictivo en Maracaibo: análisis de vibraciones, termografía, alineación láser y balanceo dinámico para plantas que no pueden parar.',
   url: 'https://gempro.com.ve',
-  whatsapp: '584146355951',
-  whatsappDisplay: '+58 414-635 5951',
+  whatsapp: '584146164928',
+  whatsappDisplay: '+58 414-616 4928',
   phone: '+58 414-6355951',
   email: 'keith.quilarquez@gempro.com.ve',
   address: 'Urb. Urdaneta, Av. principal con calle 9, Edif. GEMPRO PB No. 105-A, Maracaibo, Edo. Zulia, Venezuela',
