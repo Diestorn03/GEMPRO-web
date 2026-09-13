@@ -94,6 +94,7 @@ export const GET: APIRoute = async ({ cookies, url }) => {
   if (!estaAutenticado(cookies)) return json({ error: 'Sin sesión' }, 401);
   const evento = url.searchParams.get('evento') ?? '';
   if (!UUID.test(evento)) return json({ error: 'Evento inválido' }, 400);
-  const { data } = await sb().from('registro_evento').select('nombre, correo, telefono, creado_en').eq('evento_id', evento).order('creado_en', { ascending: false });
+  // select('*'): empresa y cargo llegan con la fase 10; si aún no existen, el CSV sale igual sin esas columnas.
+  const { data } = await sb().from('registro_evento').select('*').eq('evento_id', evento).order('creado_en', { ascending: false });
   return json(data ?? []);
 };

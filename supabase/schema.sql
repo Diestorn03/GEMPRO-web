@@ -33,6 +33,8 @@ create table registro_evento (
   id uuid primary key default gen_random_uuid(),
   evento_id uuid not null references eventos(id) on delete cascade,
   nombre text not null,
+  empresa text, -- Fase 10
+  cargo text, -- Fase 10
   correo text not null,
   telefono text,
   creado_en timestamptz not null default now()

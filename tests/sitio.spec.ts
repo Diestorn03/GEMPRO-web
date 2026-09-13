@@ -211,3 +211,12 @@ test.describe('Cabeceras', () => {
     expect([401, 503]).toContain((await request.get('/api/latido')).status());
   });
 });
+
+test.describe('Registro del evento', () => {
+  test('el endpoint exige nombre, empresa, cargo y correo válido', async ({ request }) => {
+    const res = await request.post('/api/evento', { data: { nombre: 'A', empresa: '', cargo: '', correo: 'no-es-correo' } });
+    expect(res.status()).toBe(422);
+    const body = await res.json();
+    expect(Object.keys(body.errores)).toEqual(expect.arrayContaining(['nombre', 'empresa', 'cargo', 'correo']));
+  });
+});

@@ -32,6 +32,14 @@ const abierto = Boolean(clasificar(eventos ?? []).enCurso);
               <input id="ev-nombre" name="nombre" required minlength="2" autocomplete="name" class="field" placeholder="Su nombre" />
             </div>
             <div>
+              <label for="ev-empresa" class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Empresa</label>
+              <input id="ev-empresa" name="empresa" required minlength="2" autocomplete="organization" class="field" placeholder="Nombre de su empresa" />
+            </div>
+            <div>
+              <label for="ev-cargo" class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Cargo</label>
+              <input id="ev-cargo" name="cargo" required minlength="2" autocomplete="organization-title" class="field" placeholder="Ej. Jefe de mantenimiento" />
+            </div>
+            <div>
               <label for="ev-correo" class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Correo</label>
               <input id="ev-correo" name="correo" type="email" required autocomplete="email" class="field" placeholder="nombre@correo.com" />
             </div>

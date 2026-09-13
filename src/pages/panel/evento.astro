@@ -239,7 +239,7 @@ const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[
       try {
         const registros = await traer(evento);
         if ('csv' in boton.dataset) {
-          const filas = [['Nombre', 'Correo', 'Teléfono', 'Fecha (Venezuela)'], ...registros.map((r: any) => [r.nombre, r.correo, r.telefono ?? '', fechaVE(r.creado_en)])];
+          const filas = [['Nombre', 'Empresa', 'Cargo', 'Correo', 'Teléfono', 'Fecha (Venezuela)'], ...registros.map((r: any) => [r.nombre, r.empresa ?? '', r.cargo ?? '', r.correo, r.telefono ?? '', fechaVE(r.creado_en)])];
           const csv = filas.map((f: unknown[]) => f.map(celda).join(',')).join('\n');
           const a = document.createElement('a');
           a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
@@ -247,7 +247,7 @@ const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[
           a.click();
         } else if (resultado) {
           const g = registros[Math.floor(Math.random() * registros.length)];
-          resultado.textContent = g ? `🎉 Ganador: ${g.nombre} — ${g.correo}` : 'Este evento no tiene registros.';
+          resultado.textContent = g ? `🎉 Ganador: ${g.nombre}${g.empresa ? ` (${g.empresa}${g.cargo ? ', ' + g.cargo : ''})` : ''} — ${g.correo}` : 'Este evento no tiene registros.';
           resultado.classList.remove('hidden');
         }
       } finally { boton.disabled = false; }

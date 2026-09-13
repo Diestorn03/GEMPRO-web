@@ -17,10 +17,14 @@ export const POST: APIRoute = async (ctx) => {
   if (clean(data.empresa_web)) return json({ ok: true }); // honeypot
 
   const nombre = clean(data.nombre, 120);
+  const empresa = clean(data.empresa, 120);
+  const cargo = clean(data.cargo, 80);
   const correo = clean(data.correo, 160);
   const telefono = clean(data.telefono, 40);
   const errores: Record<string, string> = {};
   if (nombre.length < 2) errores.nombre = 'Indique su nombre.';
+  if (empresa.length < 2) errores.empresa = 'Indique su empresa.';
+  if (cargo.length < 2) errores.cargo = 'Indique su cargo.';
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(correo)) errores.correo = 'Indique un correo válido.';
   if (Object.keys(errores).length) return json({ ok: false, errores }, 422);
 
@@ -31,8 +35,8 @@ export const POST: APIRoute = async (ctx) => {
   const evento = clasificar(eventos ?? []).enCurso;
   if (!evento) return json({ ok: false, error: 'El registro para el evento no está disponible en este momento.' }, 403);
 
-  const { error } = await sb().from('registro_evento').insert({ nombre, correo, telefono: telefono || null, evento_id: evento.id });
-  if (error) { console.error('[evento] no se pudo registrar', error); return json({ ok: false, error: 'No pudimos registrar su participación. Intente de nuevo.' }, 500); }
+  const { error } = await sb().from('registro_evento').insert({ nombre, empresa, cargo, correo, telefono: telefono || null, evento_id: evento.id });
+  if (error) { console.error('[evento] no se pudo registrar', /empresa|cargo/.test(error.message) ? 'falta ejecutar supabase/fase10-registro-empresa-cargo.sql' : error); return json({ ok: false, error: 'No pudimos registrar su participación. Intente de nuevo.' }, 500); }
   await registrarIntento(ip, 'evento');
   return json({ ok: true });
 };
