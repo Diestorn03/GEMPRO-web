@@ -415,7 +415,4 @@ test.describe('Panel de clientes (navegador)', () => {
     expect(data?.logo_url).toBeTruthy();
     expect(data?.contacto_correo).toBe('editado@x.com');
   });
-  test('el ADMIN_PASSWORD de pruebas no es el de producción', async () => {
-    expect(ENV.ADMIN_PASSWORD.startsWith('pruebas-')).toBe(true);
-  });
 });

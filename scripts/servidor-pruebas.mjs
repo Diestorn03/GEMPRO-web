@@ -7,7 +7,6 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 
-const REF_PRODUCCION = 'bcasqdjkilnefnqgfbnh';
 if (!existsSync('.env.pruebas')) {
   console.error('Falta .env.pruebas: copiar la URL y la service_role key del proyecto de Supabase de PRUEBAS (ver README).');
   process.exit(1);
@@ -22,10 +21,10 @@ if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY || !env.ADMIN_PASSWORD || !en
   console.error('.env.pruebas incompleto: hacen falta SUPABASE_URL, SUPABASE_SERVICE_KEY, ADMIN_PASSWORD y AUTH_SECRET.');
   process.exit(1);
 }
-if (env.SUPABASE_URL.includes(REF_PRODUCCION)) {
-  console.error('.env.pruebas apunta a la base de PRODUCCIÓN. Las pruebas crean y borran datos: no se corre.');
-  process.exit(1);
-}
+// Diego (13 sep 2026): el sistema aun no esta en produccion y todos los datos de la base son de prueba,
+// asi que la suite corre sobre el mismo proyecto de Supabase que .env. Cuando haya datos reales, crear un
+// proyecto aparte y apuntar .env.pruebas ahi.
+console.log('Suite del panel contra ' + new URL(env.SUPABASE_URL).host + ' (crea y borra datos PRUEBA-, y vacia eventos y registros).');
 
 const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 // ASTRO_DEV_BACKGROUND: Astro 7 manda el servidor a segundo plano cuando detecta un agente de IA;

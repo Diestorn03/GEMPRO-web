@@ -9,7 +9,6 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 export const BASE = 'http://127.0.0.1:4322';
 export const PREFIJO = 'PRUEBA-';
-const REF_PRODUCCION = 'bcasqdjkilnefnqgfbnh';
 
 function leerEnv(ruta: string): Record<string, string> {
   const env: Record<string, string> = {};
@@ -21,9 +20,7 @@ function leerEnv(ruta: string): Record<string, string> {
   return env;
 }
 export const ENV = leerEnv('.env.pruebas');
-if (!ENV.SUPABASE_URL || ENV.SUPABASE_URL.includes(REF_PRODUCCION)) {
-  throw new Error('La suite del panel solo corre contra la base de PRUEBAS (.env.pruebas). Ver README.');
-}
+if (!ENV.SUPABASE_URL) throw new Error('Falta .env.pruebas (ver README).');
 
 let cliente: SupabaseClient | null = null;
 /** Cliente de Supabase de pruebas con service_role: verifica lo que el servidor escribió y limpia. */
