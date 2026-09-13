@@ -26,6 +26,25 @@ export function eventoActual<T extends EventoConfig>(eventos: T[]): T | null {
   return eventos.find(eventoAbierto) ?? eventos[0] ?? null;
 }
 
+/** true si el evento todavía no empezó (tiene fecha de apertura y está en el futuro). */
+export function esFuturo(e: EventoConfig, ahora = Date.now()): boolean {
+  return !!e.inicio && ahora < new Date(e.inicio).getTime();
+}
+
+/** Lo que muestra el panel: `enCurso` (abierto ahora), `programados` (empiezan después, del más
+ *  cercano al más lejano) y `anteriores` (lo demás, del más reciente al más viejo). `actual` es la
+ *  tarjeta principal: el que está en curso; si no hay, el próximo programado; si no, el último pasado.
+ *  Antes un evento futuro caía en "anteriores" como "cerrado" y, sin evento abierto, el último
+ *  creado (aunque fuera futuro) se mostraba como "último evento (cerrado)". */
+export function clasificar<T extends EventoConfig>(eventos: T[], ahora = Date.now()) {
+  const enCurso = eventos.find((e) => eventoAbierto(e)) ?? null;
+  const resto = eventos.filter((e) => e !== enCurso);
+  const programados = resto.filter((e) => esFuturo(e, ahora)).sort((a, b) => new Date(a.inicio!).getTime() - new Date(b.inicio!).getTime());
+  const anteriores = resto.filter((e) => !esFuturo(e, ahora));
+  const actual = enCurso ?? programados[0] ?? anteriores[0] ?? null;
+  return { actual, enCurso, programados: programados.filter((e) => e !== actual), anteriores: anteriores.filter((e) => e !== actual) };
+}
+
 /** Venezuela es UTC-4 fijo (sin horario de verano desde 2016). Las funciones de Vercel corren en
  *  UTC: sin esto, "18:00" escrito en el panel se guardaba como las 18:00 UTC = 14:00 en Maracaibo. */
 const VET = '-04:00';
