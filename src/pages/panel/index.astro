@@ -35,12 +35,15 @@ const cifras = [
     ))}
   </div>
 
-  <form id="nuevo-cliente" method="post" action="/api/panel/clientes" data-ajax data-reveal class="mb-10 grid scroll-mt-28 gap-4 rounded-md border border-white/10 bg-panel p-6 sm:grid-cols-2 lg:p-8">
+  <form id="nuevo-cliente" method="post" action="/api/panel/clientes" enctype="multipart/form-data" data-ajax data-reveal class="mb-10 grid scroll-mt-28 gap-4 rounded-md border border-white/10 bg-panel p-6 sm:grid-cols-2 lg:p-8">
     <div class="sm:col-span-2">
       <span class="eyebrow">Nuevo cliente</span>
       <h2 class="display mt-2 text-[24px] text-white">Crear acceso</h2>
     </div>
     {error === '1' && <p class="text-[13px] text-amber sm:col-span-2" role="alert">Falta el nombre de la empresa o la contraseña es muy corta (mínimo 8 caracteres).</p>}
+    {error === 'correo' && <p class="text-[13px] text-amber sm:col-span-2" role="alert">El correo del contacto no es válido.</p>}
+    {error === 'logo' && <p class="text-[13px] text-amber sm:col-span-2" role="alert">El cliente se creó, pero el logo no se pudo usar: debe ser una imagen de hasta 2 MB. Súbelo desde su página.</p>}
+    {error === 'fase9' && <p class="text-[13px] text-amber sm:col-span-2" role="alert">Faltan las columnas nuevas de clientes: ejecutar supabase/fase9-clientes-logo-contacto.sql en el SQL Editor de Supabase.</p>}
     <div>
       <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog" for="nombre_empresa">Empresa</label>
       <input name="nombre_empresa" id="nombre_empresa" required class="field" placeholder="Nombre de la empresa" />
@@ -48,6 +51,19 @@ const cifras = [
     <div>
       <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog" for="contacto">Contacto (opcional)</label>
       <input name="contacto" id="contacto" class="field" placeholder="Persona de contacto" />
+    </div>
+    <div>
+      <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog" for="contacto_cargo">Cargo del contacto (opcional)</label>
+      <input name="contacto_cargo" id="contacto_cargo" class="field" placeholder="Jefe de mantenimiento" />
+    </div>
+    <div>
+      <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog" for="contacto_correo">Correo del contacto (opcional)</label>
+      <input name="contacto_correo" id="contacto_correo" type="email" class="field" placeholder="nombre@empresa.com" />
+    </div>
+    <div class="sm:col-span-2">
+      <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog" for="logo">Logo de la empresa (opcional)</label>
+      <input type="file" name="logo" id="logo" accept="image/*" class="field text-[13px]" />
+      <p class="mt-1.5 text-[12px] text-mist">El cliente lo verá en su portal. Mejor PNG con fondo transparente; se ajusta solo a 800 px.</p>
     </div>
     <div class="sm:col-span-2">
       <label class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog" for="password_cliente">Contraseña para este cliente</label>
@@ -66,10 +82,13 @@ const cifras = [
   <div id="lista-clientes" class="grid gap-3" data-reveal-group data-stagger="0.06">
     {(clientes ?? []).map((c) => (
       <div class="fila-cliente group flex flex-col gap-3 rounded-md border border-white/10 bg-panel p-5 transition-[border-color,transform] duration-500 hover:-translate-y-0.5 hover:border-neon/50 sm:flex-row sm:items-center sm:justify-between" data-nombre={c.nombre_empresa.toLowerCase()}>
-        <div class="min-w-0">
-          <p class="truncate text-[17px] font-semibold text-white">{c.nombre_empresa}</p>
-          {c.contacto && <p class="text-[13px] text-mist">{c.contacto}</p>}
-          <p class="mt-1 truncate font-mono text-[12px] text-neon">{base}/c/{c.token}</p>
+        <div class="flex min-w-0 items-center gap-4">
+          {c.logo_url && <img src={c.logo_url} alt="" class="h-12 w-12 shrink-0 rounded bg-white/5 object-contain p-1" />}
+          <div class="min-w-0">
+            <p class="truncate text-[17px] font-semibold text-white">{c.nombre_empresa}</p>
+            {c.contacto && <p class="truncate text-[13px] text-mist">{c.contacto}{c.contacto_cargo && ` · ${c.contacto_cargo}`}{c.contacto_correo && ` · ${c.contacto_correo}`}</p>}
+            <p class="mt-1 truncate font-mono text-[12px] text-neon">{base}/c/{c.token}</p>
+          </div>
         </div>
         <div class="flex shrink-0 gap-2">
           <a href={`/panel/${c.id}`} class="btn-ghost border border-white/15 px-4 py-2 text-[13px] transition-colors group-hover:border-neon/50">Historial de informes</a>
@@ -87,7 +106,11 @@ const cifras = [
 </Panel>
 
 <script>
+  import { reducirAlElegir } from '../../scripts/reducir-imagen';
+
   function setup() {
+    const logo = document.getElementById('logo') as HTMLInputElement | null;
+    if (logo) reducirAlElegir(logo, 800, true);
     const buscador = document.getElementById('buscador-clientes') as HTMLInputElement | null;
     const lista = document.getElementById('lista-clientes');
     const sinResultados = document.getElementById('sin-resultados');

@@ -49,6 +49,9 @@ create table clientes (
   password_hash text not null,
   password_cifrada text, -- Fase 6: reversible con AUTH_SECRET, para poder mostrarla en el panel
   contacto text,
+  contacto_cargo text, -- Fase 9
+  contacto_correo text, -- Fase 9
+  logo_url text, -- Fase 9: logo en el bucket público clientes-logos, lo ve el cliente en su portal
   creado_en timestamptz not null default now()
 );
 alter table clientes enable row level security;
@@ -67,6 +70,8 @@ alter table informes enable row level security;
 -- file_size_limit: el límite de 20 MB de /panel/[id] hoy solo lo revisa el navegador; esto lo
 -- hace cumplir el propio bucket aunque alguien llame a la ruta de subida sin pasar por el panel.
 insert into storage.buckets (id, name, public, file_size_limit) values ('informes-tecnicos', 'informes-tecnicos', false, 20971520);
+-- Bucket público para los logos de los clientes (Fase 9): el portal privado los muestra por URL directa.
+insert into storage.buckets (id, name, public, file_size_limit) values ('clientes-logos', 'clientes-logos', true, 2097152);
 -- Sin políticas de storage para el rol anon: todo acceso (subir, listar, descargar) pasa por
 -- rutas del servidor con la service_role key, que evita RLS por diseño.
 

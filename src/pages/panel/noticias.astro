@@ -81,33 +81,12 @@ const fecha = fechaVE;
 </Panel>
 
 <script>
-  /** Reduce la foto en el navegador (máx. 1600 px, JPEG) antes de enviarla: las fotos de teléfono
-   *  de 5-12 MB superarían el límite de 4,5 MB por petición de Vercel y tardarían mucho en subir. */
-  async function reducirImagen(archivo: File): Promise<File> {
-    if (!archivo.type.startsWith('image/') || archivo.type === 'image/gif') return archivo;
-    const mapa = await createImageBitmap(archivo).catch(() => null);
-    if (!mapa) return archivo;
-    const escala = Math.min(1, 1600 / Math.max(mapa.width, mapa.height));
-    if (escala === 1 && archivo.size < 1_000_000) return archivo;
-    const lienzo = document.createElement('canvas');
-    lienzo.width = Math.round(mapa.width * escala);
-    lienzo.height = Math.round(mapa.height * escala);
-    lienzo.getContext('2d')!.drawImage(mapa, 0, 0, lienzo.width, lienzo.height);
-    const blob = await new Promise<Blob | null>((r) => lienzo.toBlob(r, 'image/jpeg', 0.85));
-    if (!blob) return archivo;
-    return new File([blob], archivo.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' });
-  }
-
+  import { reducirAlElegir } from '../../scripts/reducir-imagen';
+  /** Las fotos de teléfono de 5-12 MB superarían el límite de 4,5 MB por petición de Vercel:
+   *  se reducen a 1600 px (JPEG) antes de enviarlas. */
   function setup() {
     const imagen = document.getElementById('imagen') as HTMLInputElement | null;
-    if (!imagen || imagen.dataset.listo) return;
-    imagen.dataset.listo = '1';
-    imagen.addEventListener('change', async () => {
-      const original = imagen.files?.[0];
-      if (!original) return;
-      const reducida = await reducirImagen(original);
-      if (reducida !== original) { const dt = new DataTransfer(); dt.items.add(reducida); imagen.files = dt.files; }
-    });
+    if (imagen) reducirAlElegir(imagen);
   }
   document.addEventListener('astro:page-load', setup);
 </script>

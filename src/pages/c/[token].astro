@@ -36,6 +36,7 @@ if (autenticado) {
       <div class="container-x flex min-h-[calc(100dvh-73px)] items-center py-16">
         <form method="post" action="/api/c/entrar" data-ajax data-reveal="up" class="w-full max-w-md rounded-md border border-white/15 bg-white/[0.06] p-8 backdrop-blur-xl lg:p-10">
           <input type="hidden" name="token" value={token} />
+          {cliente.logo_url && <img src={cliente.logo_url} alt={cliente.nombre_empresa} class="mb-5 max-h-16 w-auto max-w-[220px] object-contain" />}
           <span class="eyebrow">Portal de {cliente.nombre_empresa}</span>
           <h1 class="display mt-3 text-[clamp(28px,4vw,38px)] text-white" data-split>Sus informes técnicos</h1>
           <p class="mb-7 mt-2 text-[14px] text-fog">Ingrese la contraseña que le compartió GEMPRO.</p>
@@ -50,9 +51,11 @@ if (autenticado) {
   ) : (
     <div class="mx-auto max-w-3xl">
       <div class="mb-10 flex flex-col gap-3">
+        {cliente.logo_url && <img src={cliente.logo_url} alt={cliente.nombre_empresa} class="max-h-20 w-auto max-w-[260px] object-contain" data-reveal="fade" />}
         <span class="eyebrow" data-reveal="fade">Portal de {cliente.nombre_empresa}</span>
         <h1 class="display text-[clamp(32px,5vw,52px)] text-white" data-split>Sus informes técnicos</h1>
         <p class="text-[15px] text-mist" data-reveal data-delay="0.25">{informes.length} documento{informes.length === 1 ? '' : 's'} disponible{informes.length === 1 ? '' : 's'} para descargar.</p>
+        {cliente.contacto && <p class="text-[14px] text-fog" data-reveal data-delay="0.3">Contacto: {cliente.contacto}{cliente.contacto_cargo && ` · ${cliente.contacto_cargo}`}{cliente.contacto_correo && ` · ${cliente.contacto_correo}`}</p>}
       </div>
       <div class="grid gap-3" data-reveal-group data-stagger="0.07">
         {informes.map((inf) => (

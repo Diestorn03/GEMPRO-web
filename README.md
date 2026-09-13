@@ -94,7 +94,7 @@ Todo vive en este mismo proyecto como rutas renderizadas en el servidor (`export
 | Ruta | Qué es |
 |---|---|
 | `/entrar` | Acceso del equipo de GEMPRO con `ADMIN_PASSWORD`. Sesión de 30 días en cookie firmada (`gp_sesion`). |
-| `/panel` | Clientes: crear acceso (link + contraseña de mínimo 8 caracteres), buscador e historial de informes por cliente. |
+| `/panel` | Clientes: crear acceso (link + contraseña de mínimo 8 caracteres) con persona de contacto, cargo, correo y logo de la empresa (bucket público `clientes-logos`, hasta 2 MB, reducido a 800 px en el navegador); buscador e historial de informes por cliente. Los datos y el logo se editan desde la página del cliente; él los ve en su portal sin poder cambiarlos. |
 | `/panel/noticias` | CMS mínimo: título, artículo, foto (bucket público `noticias-imagenes`, hasta 5 MB), visible u oculta. |
 | `/panel/evento` | Un evento activo como mucho: abre y cierra solo por su horario o a mano ("Abrir ahora" / "Cerrar evento ahora"); al cerrar pasa al historial con contador, CSV y ganador al azar (los eventos con registros no se eliminan); no se puede crear ni abrir uno que se cruce con otro. QR en dos estilos, estilizado (puntos redondeados, degradado azul, ojos circulares, isotipo suelto al centro) y clásico (máxima compatibilidad), en PNG 2400 px y SVG. |
 | `/c/[token]` | Portal de un cliente: pide su contraseña y lista sus informes con enlaces firmados de 5 minutos. |
@@ -103,7 +103,7 @@ Todo vive en este mismo proyecto como rutas renderizadas en el servidor (`export
 
 Seguridad: contraseñas de clientes con hash y sal; cookies `HttpOnly`, `Secure` y `SameSite=Lax` con vencimiento firmado dentro del valor (la firma del panel incluye `ADMIN_PASSWORD`: cambiarla cierra todas las sesiones); comprobación de origen de Astro en todos los POST; límite de intentos por IP en `/api/entrar`, `/api/c/entrar`, `/api/evento` y `/api/contacto` (tabla `intentos_acceso`, ver `supabase/fase5-limite.sql`); `Cache-Control: no-store` en las rutas privadas (`src/middleware.ts`); cabeceras de seguridad, Content-Security-Policy y caché inmutable de `/_astro` para TODO el sitio (estático y servidor) en `vercel.json` — si se cambia un `<script is:inline>`, hay que recalcular su hash con `node scripts/csp-hashes.mjs`; RLS activo y la `service_role` key solo en el servidor.
 
-Migraciones: `supabase/schema.sql` es la forma final para un proyecto nuevo; un proyecto existente ejecuta en orden `fase5-limite.sql`, `fase6-clientes-eventos.sql`, `fase7-limite-informes.sql` y `fase8-limite-noticias.sql` (`/api/salud` dice cuáles faltan).
+Migraciones: `supabase/schema.sql` es la forma final para un proyecto nuevo; un proyecto existente ejecuta en orden `fase5-limite.sql`, `fase6-clientes-eventos.sql`, `fase7-limite-informes.sql`, `fase8-limite-noticias.sql` y `fase9-clientes-logo-contacto.sql` (`/api/salud` dice cuáles faltan).
 
 Scripts: `node scripts/generar-favicon.mjs` (favicon e iconos desde el isotipo), `node scripts/generar-isotipo.mjs` recorta el isotipo del logo maestro para el QR; `node scripts/probar-qr.mjs` verifica con dos decodificadores (ZXing y jsQR) que ambos estilos de QR se leen en PNG, PNG degradado y SVG. `vercel.json` programa una visita diaria a `/api/latido` para que el proyecto gratuito de Supabase no se pause por inactividad.
 

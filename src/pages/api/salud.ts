@@ -40,16 +40,19 @@ export const GET: APIRoute = async ({ cookies, url, request }) => {
   let limite_intentos = 'sin probar hasta que base_de_datos sea ok';
   let ultimo_latido: string | null = null;
   let fase6 = 'sin probar hasta que base_de_datos sea ok';
+  let fase9 = 'sin probar hasta que base_de_datos sea ok';
   let contrasenas_visibles = 'sin probar';
   if (base_de_datos === 'ok') {
     const { data: latido, error: errLimite } = await sb().from('intentos_acceso').select('creado_en').eq('ruta', 'latido').order('creado_en', { ascending: false }).limit(1).maybeSingle();
     limite_intentos = errLimite ? 'falta la tabla intentos_acceso: ejecutar supabase/fase5-limite.sql en el SQL Editor de Supabase' : 'ok';
     ultimo_latido = latido?.creado_en ?? null;
-    const [{ data: cifrado, error: errCol }, { error: errEventos }] = await Promise.all([
+    const [{ data: cifrado, error: errCol }, { error: errEventos }, { error: errLogo }] = await Promise.all([
       sb().from('clientes').select('password_cifrada').not('password_cifrada', 'is', null).limit(1).maybeSingle(),
       sb().from('eventos').select('id', { count: 'exact', head: true }),
+      sb().from('clientes').select('logo_url', { count: 'exact', head: true }),
     ]);
     fase6 = errCol || errEventos ? 'falta ejecutar supabase/fase6-clientes-eventos.sql en el SQL Editor de Supabase' : 'ok';
+    fase9 = errLogo ? 'falta ejecutar supabase/fase9-clientes-logo-contacto.sql en el SQL Editor de Supabase' : 'ok';
     contrasenas_visibles = errCol ? 'sin probar' : !cifrado ? 'ningún cliente tiene contraseña guardada todavía' : descifrar(cifrado.password_cifrada) ? 'ok' : 'AUTH_SECRET cambió: asignar contraseñas nuevas desde el panel';
   }
   const body = {
@@ -58,6 +61,7 @@ export const GET: APIRoute = async ({ cookies, url, request }) => {
     limite_intentos,
     ultimo_latido,
     fase6,
+    fase9,
     contrasenas_visibles,
     supabase_url: Boolean(v('SUPABASE_URL')),
     supabase_service_key: Boolean(v('SUPABASE_SERVICE_KEY')),

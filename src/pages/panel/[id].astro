@@ -23,14 +23,21 @@ const contrasena = descifrar(cliente.password_cifrada);
 const mensajeCopiar = contrasena ? `Portal de informes técnicos GEMPRO\n${link}\nContraseña: ${contrasena}` : link;
 const etiquetaCopiar = contrasena ? 'Copiar link y contraseña' : 'Copiar link';
 const claveCambiada = Astro.url.searchParams.get('clave') === '1';
-const errorClave = Astro.url.searchParams.get('error') === 'clave';
+const error = Astro.url.searchParams.get('error');
+const errorClave = error === 'clave';
+const datosOk = Astro.url.searchParams.get('datos') === '1';
 const fecha = fechaVE;
 ---
-<Panel title={cliente.nombre_empresa} seccion="clientes" eyebrow="Historial de informes" encabezado={cliente.nombre_empresa} descripcion={cliente.contacto ? `Contacto: ${cliente.contacto}` : undefined}>
+<Panel title={cliente.nombre_empresa} seccion="clientes" eyebrow="Historial de informes" encabezado={cliente.nombre_empresa} descripcion={cliente.contacto ? `Contacto: ${cliente.contacto}${cliente.contacto_cargo ? ' · ' + cliente.contacto_cargo : ''}` : undefined}>
   <a slot="acciones" href="/panel" class="btn-ghost border border-white/15 px-4 py-2.5 text-[13px]">← Todos los clientes</a>
 
   {claveCambiada && <p class="mb-6 rounded-md border border-neon/40 bg-neon/10 px-4 py-3 text-[14px] text-white" data-reveal="fade">Contraseña actualizada. Compártela de nuevo con el cliente; las sesiones anteriores quedaron cerradas.</p>}
   {errorClave && <p class="mb-6 rounded-md border border-amber/40 bg-amber/10 px-4 py-3 text-[14px] text-amber" role="alert">No se pudo cambiar la contraseña (mínimo 8 caracteres).</p>}
+  {datosOk && <p class="mb-6 rounded-md border border-neon/40 bg-neon/10 px-4 py-3 text-[14px] text-white" data-reveal="fade">Datos del cliente actualizados.</p>}
+  {error === 'correo' && <p class="mb-6 rounded-md border border-amber/40 bg-amber/10 px-4 py-3 text-[14px] text-amber" role="alert">El correo del contacto no es válido.</p>}
+  {error === 'logo' && <p class="mb-6 rounded-md border border-amber/40 bg-amber/10 px-4 py-3 text-[14px] text-amber" role="alert">No se pudo usar el logo: debe ser una imagen de hasta 2 MB (y el bucket clientes-logos debe existir: ver supabase/fase9).</p>}
+  {error === 'datos' && <p class="mb-6 rounded-md border border-amber/40 bg-amber/10 px-4 py-3 text-[14px] text-amber" role="alert">No se pudieron guardar los datos del cliente. Intenta de nuevo.</p>}
+  {error === 'fase9' && <p class="mb-6 rounded-md border border-amber/40 bg-amber/10 px-4 py-3 text-[14px] text-amber" role="alert">Faltan las columnas nuevas de clientes: ejecutar supabase/fase9-clientes-logo-contacto.sql en el SQL Editor de Supabase.</p>}
 
   <div class="mb-8 grid gap-4 rounded-md border border-neon/30 bg-neon/5 p-5 sm:grid-cols-[1fr_auto] sm:items-center" data-reveal>
     <div class="min-w-0">
@@ -58,6 +65,42 @@ const fecha = fechaVE;
           <input id="password_nueva" name="password" required minlength={8} class="field" autocomplete="off" />
         </div>
         <button type="submit" class="btn-ghost border border-white/15 px-4 py-3 text-[13px]">Guardar</button>
+      </form>
+    </details>
+  </div>
+
+  <div class="mb-8 grid gap-5 rounded-md border border-white/10 bg-panel p-5 sm:grid-cols-[auto_1fr] sm:items-center" data-reveal>
+    <div class="flex h-24 w-40 items-center justify-center rounded bg-white/5 p-2">
+      {cliente.logo_url ? <img src={cliente.logo_url} alt={`Logo de ${cliente.nombre_empresa}`} class="max-h-full max-w-full object-contain" /> : <span class="text-[12px] text-mist">Sin logo</span>}
+    </div>
+    <div class="min-w-0">
+      <span class="eyebrow">Datos del cliente</span>
+      <p class="mt-1 text-[15px] text-white">{cliente.contacto || <span class="text-mist">Sin persona de contacto</span>}{cliente.contacto_cargo && <span class="text-mist"> · {cliente.contacto_cargo}</span>}</p>
+      {cliente.contacto_correo && <a href={`mailto:${cliente.contacto_correo}`} class="font-mono text-[13px] text-neon hover:underline">{cliente.contacto_correo}</a>}
+      <p class="mt-1 text-[12px] text-mist">El cliente ve estos datos y el logo en su portal, sin poder editarlos.</p>
+    </div>
+    <details class="sm:col-span-2">
+      <summary class="cursor-pointer text-[13px] font-semibold text-mist hover:text-white">Editar datos y logo</summary>
+      <form method="post" action="/api/panel/clientes" enctype="multipart/form-data" data-ajax class="mt-3 grid gap-3 sm:grid-cols-2">
+        <input type="hidden" name="_accion" value="datos" />
+        <input type="hidden" name="id" value={cliente.id} />
+        <div>
+          <label for="contacto" class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Persona de contacto</label>
+          <input id="contacto" name="contacto" value={cliente.contacto ?? ''} class="field" />
+        </div>
+        <div>
+          <label for="contacto_cargo" class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Cargo</label>
+          <input id="contacto_cargo" name="contacto_cargo" value={cliente.contacto_cargo ?? ''} class="field" placeholder="Jefe de mantenimiento" />
+        </div>
+        <div>
+          <label for="contacto_correo" class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Correo</label>
+          <input id="contacto_correo" name="contacto_correo" type="email" value={cliente.contacto_correo ?? ''} class="field" placeholder="nombre@empresa.com" />
+        </div>
+        <div>
+          <label for="logo" class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Logo {cliente.logo_url && '(elige otro para cambiarlo)'}</label>
+          <input type="file" id="logo" name="logo" accept="image/*" class="field text-[13px]" />
+        </div>
+        <button type="submit" class="btn-ghost self-start border border-white/15 px-4 py-3 text-[13px] sm:col-span-2">Guardar datos</button>
       </form>
     </details>
   </div>
@@ -100,6 +143,7 @@ const fecha = fechaVE;
 </Panel>
 
 <script>
+  import { reducirAlElegir } from '../../scripts/reducir-imagen';
   /**
    * Subida directa a Supabase Storage: el servidor solo firma la URL y registra la fila; el
    * archivo nunca pasa por Vercel (cuyo límite de 4,5 MB por petición rompía los informes reales).
@@ -123,6 +167,8 @@ const fecha = fechaVE;
   }
 
   function setup() {
+    const logo = document.getElementById('logo') as HTMLInputElement | null;
+    if (logo) reducirAlElegir(logo, 800, true);
     document.querySelectorAll<HTMLButtonElement>('[data-copiar]').forEach((b) => {
       if (b.dataset.listo) return;
       b.dataset.listo = '1';
