@@ -35,7 +35,7 @@ export const site = {
   url: 'https://gempro.com.ve',
   whatsapp: '584146164928',
   whatsappDisplay: '+58 414-616 4928',
-  phone: '+58 414-6355951',
+  phone: '+58 414-6164928',
   email: 'keith.quilarquez@gempro.com.ve',
   address: 'Urb. Urdaneta, Av. principal con calle 9, Edif. GEMPRO PB No. 105-A, Maracaibo, Edo. Zulia, Venezuela',
   addressShort: 'Urb. Urdaneta, Av. principal con calle 9, Edif. GEMPRO, Maracaibo',
@@ -139,7 +139,7 @@ export const training = {
 };
 
 export const presence = [
-  { country: 'Venezuela', city: 'Maracaibo', phone: '+58 414-635 5951', tel: '+584146355951', address: 'Urb. Urdaneta, Av. principal con calle 9, Edif. GEMPRO PB No. 105-A, Maracaibo, Edo. Zulia', email: 'keith.quilarquez@gempro.com.ve' },
+  { country: 'Venezuela', city: 'Maracaibo', phone: '+58 414-616 4928', tel: '+584146164928', address: 'Urb. Urdaneta, Av. principal con calle 9, Edif. GEMPRO PB No. 105-A, Maracaibo, Edo. Zulia', email: 'keith.quilarquez@gempro.com.ve' },
   { country: 'Argentina', city: 'Buenos Aires', phone: '+54 911 2539-8609', tel: '+5491125398609', address: 'Calle Julián Álvarez 2335, apto 6F, CABA', email: 'gempro.ar@gmail.com' },
   { country: 'Perú', city: 'Lima', phone: '+51 916 710 376', tel: '+51916710376', address: 'Calle Padre Urraca 140, San Miguel, Lima', email: 'gemproperu@gmail.com' },
   { country: 'Panamá', city: 'Costa del Este', phone: '+507 621-33648', tel: '+50762133648', address: 'Parque Industrial Costa del Este, Calle 3era, Edif. Istorage Piso M-01', email: 'info@gempropanama.com' },
