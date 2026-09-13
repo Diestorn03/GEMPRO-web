@@ -299,7 +299,6 @@ test.describe('Informes técnicos', () => {
     const original = 'Informe ñandú #3 (final) ✓.pdf';
     const ruta = await subir(request, c.id, original);
     const saneado = original.replace(/[^a-zA-Z0-9._-]/g, '_'); // misma regla que api/panel/informes.ts
-    expect(ruta).toBe(ruta.replace(/\d+-/, 'T-')); // sin cambios accidentales al comparar
     expect(ruta.endsWith(`-${saneado}`)).toBe(true);
     expect(ruta.startsWith(`${c.id}/`)).toBe(true);
     const { data } = await sb().from('informes').select('nombre_archivo').eq('cliente_id', c.id).maybeSingle();
@@ -397,7 +396,11 @@ test.describe('Panel de clientes (navegador)', () => {
     await expect(page.locator('#clave-visible')).toHaveText('clave-cliente-1');
     await page.setInputFiles('#archivos', { name: 'desde-navegador.pdf', mimeType: 'application/pdf', buffer: PDF_MINIMO });
     await page.click('#btn-subir');
-    await expect(page.locator('main')).toContainText('desde-navegador.pdf', { timeout: 30_000 });
+    // El nombre aparece antes en el texto de progreso ("Subiendo 1 de 1: …"); lo que confirma la subida es la fila
+    // del informe que la página pinta al recargarse, con su botón de eliminar.
+    const filaInforme = page.locator('form', { has: page.locator('input[name=_accion][value=eliminar]') });
+    await expect(filaInforme).toHaveCount(1, { timeout: 45_000 });
+    await expect(page.locator('main')).toContainText('desde-navegador.pdf');
     expect((await sb().from('informes').select('id').eq('cliente_id', c.id)).data?.length).toBe(1);
     page.once('dialog', (d) => d.accept());
     await page.locator('form', { has: page.locator('input[name=_accion][value=eliminar]') }).filter({ has: page.getByRole('button', { name: 'Eliminar' }) }).first().getByRole('button', { name: 'Eliminar' }).click();

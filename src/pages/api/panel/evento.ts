@@ -74,6 +74,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     return volver('abierto=1');
   }
 
+  // Cualquier otra acción no toca nada (una acción mal escrita no debe caer en "guardar").
+  if (accion !== 'guardar') return volver('error=1');
   // guardar: nombre y fechas. Escrito pero inválido (30 de febrero, formato raro) no se guarda en silencio.
   if ((inicioRaw && !inicio) || (finRaw && !fin)) return volver('error=1');
   // Evento en curso: la apertura ya ocurrió y no se toca (el campo va bloqueado); solo se mueve el cierre.
