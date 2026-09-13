@@ -1,0 +1,38 @@
+---
+/** Tarjeta compacta de un evento en las listas del panel (programados e historial). Los botones
+ *  de CSV y ganador los maneja el script de /panel/evento por los atributos data-csv / data-ganador;
+ *  el resultado del sorteo se escribe en [data-resultado] dentro de la misma [data-tarjeta]. */
+import type { Evento } from '../../lib/evento';
+import { fechaHoraVE } from '../../lib/fechas';
+
+interface Props { evento: Evento; estado: 'abierto' | 'programado' | 'cerrado'; registros: number }
+const { evento: e, estado, registros } = Astro.props;
+const rango = e.inicio && e.fin ? `${fechaHoraVE(e.inicio)} → ${fechaHoraVE(e.fin)}` : 'sin fechas';
+const color = estado === 'abierto' ? 'text-neon' : estado === 'programado' ? 'text-amber' : 'text-mist';
+const boton = 'btn-ghost border border-white/15 px-3 py-2 text-[12px]';
+---
+<div class="grid gap-3 rounded-md border border-white/10 bg-ink/40 p-4 sm:grid-cols-[1fr_auto] sm:items-center" data-tarjeta>
+  <div class="min-w-0">
+    <p class="truncate text-[16px] font-semibold text-white">{e.nombre} <span class:list={['ml-2 text-[11px] font-bold uppercase tracking-[0.1em]', color]}>{estado}</span></p>
+    <p class="font-mono text-[12px] text-mist">{rango} · <span class="text-white">{registros}</span> registro{registros === 1 ? '' : 's'}</p>
+  </div>
+  <div class="flex flex-wrap gap-2">
+    {estado !== 'programado' && <button type="button" class={boton} data-csv data-evento={e.id} data-nombre={e.nombre}>CSV</button>}
+    {estado !== 'programado' && <button type="button" class={boton} data-ganador data-evento={e.id}>Ganador</button>}
+    {estado === 'abierto' && (
+      <form method="post" action="/api/panel/evento" data-ajax data-confirmar={`¿Cerrar «${e.nombre}» ahora? Pasará al historial y el QR dejará de registrar ahí.`}>
+        <input type="hidden" name="_accion" value="cerrar" />
+        <input type="hidden" name="id" value={e.id} />
+        <button type="submit" class={`${boton} text-amber`}>Cerrar</button>
+      </form>
+    )}
+    {registros === 0 && (
+      <form method="post" action="/api/panel/evento" data-ajax data-confirmar={`¿Eliminar «${e.nombre}»?`}>
+        <input type="hidden" name="_accion" value="eliminar" />
+        <input type="hidden" name="id" value={e.id} />
+        <button type="submit" class={`${boton} text-amber`}>Eliminar</button>
+      </form>
+    )}
+  </div>
+  <p class="hidden rounded-md border border-neon/40 bg-neon/10 px-4 py-2 text-[14px] text-white sm:col-span-2" data-resultado></p>
+</div>

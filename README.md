@@ -96,7 +96,7 @@ Todo vive en este mismo proyecto como rutas renderizadas en el servidor (`export
 | `/entrar` | Acceso del equipo de GEMPRO con `ADMIN_PASSWORD`. Sesión de 30 días en cookie firmada (`gp_sesion`). |
 | `/panel` | Clientes: crear acceso (link + contraseña de mínimo 8 caracteres), buscador e historial de informes por cliente. |
 | `/panel/noticias` | CMS mínimo: título, artículo, foto (bucket público `noticias-imagenes`, hasta 5 MB), visible u oculta. |
-| `/panel/evento` | Fechas de apertura y cierre, interruptor manual, contador, CSV, ganador al azar y QR en dos estilos, estilizado (puntos redondeados, degradado azul, ojos circulares, isotipo suelto al centro) y clásico (máxima compatibilidad), en PNG 2400 px y SVG. |
+| `/panel/evento` | Un evento activo como mucho: abre y cierra solo por su horario o a mano ("Abrir ahora" / "Cerrar evento ahora"); al cerrar pasa al historial con contador, CSV y ganador al azar (los eventos con registros no se eliminan); no se puede crear ni abrir uno que se cruce con otro. QR en dos estilos, estilizado (puntos redondeados, degradado azul, ojos circulares, isotipo suelto al centro) y clásico (máxima compatibilidad), en PNG 2400 px y SVG. |
 | `/c/[token]` | Portal de un cliente: pide su contraseña y lista sus informes con enlaces firmados de 5 minutos. |
 | `/evento` | Registro público por QR (nombre, correo, teléfono). Cerrado por defecto. |
 | `/api/salud` | Diagnóstico: qué variables llegaron, si la base responde y si existe la tabla del límite de intentos. Pide sesión de `/panel` o `?clave=` con el `AUTH_SECRET` (para poder diagnosticar incluso cuando `ADMIN_PASSWORD` es lo que falla). |

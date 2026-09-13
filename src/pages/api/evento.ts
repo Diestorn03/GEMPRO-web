@@ -2,7 +2,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sb } from '../../lib/supabase';
-import { eventoAbierto, eventoActual } from '../../lib/evento';
+import { clasificar } from '../../lib/evento';
 import { bloqueado, ipDe, registrarIntento } from '../../lib/limite';
 
 const json = (body: unknown, status = 200) =>
@@ -28,8 +28,8 @@ export const POST: APIRoute = async (ctx) => {
   if (await bloqueado(ip, 'evento', 120, 60)) return json({ ok: false, error: 'Demasiados registros desde esta conexión. Intente más tarde.' }, 429);
 
   const { data: eventos } = await sb().from('eventos').select('id, inicio, fin, forzar_abierto').order('creado_en', { ascending: false });
-  const evento = eventoActual(eventos ?? []);
-  if (!evento || !eventoAbierto(evento)) return json({ ok: false, error: 'El registro para el evento no está disponible en este momento.' }, 403);
+  const evento = clasificar(eventos ?? []).enCurso;
+  if (!evento) return json({ ok: false, error: 'El registro para el evento no está disponible en este momento.' }, 403);
 
   const { error } = await sb().from('registro_evento').insert({ nombre, correo, telefono: telefono || null, evento_id: evento.id });
   if (error) { console.error('[evento] no se pudo registrar', error); return json({ ok: false, error: 'No pudimos registrar su participación. Intente de nuevo.' }, 500); }

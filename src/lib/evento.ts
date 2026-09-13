@@ -3,10 +3,18 @@ export interface EventoConfig {
   fin: string | null;
   forzar_abierto: boolean | null;
 }
+export interface Evento extends EventoConfig {
+  id: string;
+  nombre: string;
+  creado_en: string;
+}
 
 /**
- * Por defecto CERRADO si nadie ha configurado nada — así nunca queda una página de registro
- * abierta por accidente antes de que GEMPRO decida activarla.
+ * Abierto = el QR registra. Un evento se abre y se cierra solo por sus fechas; "Abrir ahora" y
+ * "Cerrar ahora" del panel mueven esas fechas al instante actual, así que no hacen falta banderas.
+ * `forzar_abierto` queda de la versión anterior y se sigue respetando por si alguna fila la
+ * conserva (true abre, false cierra). Sin fechas: cerrado, para que nunca quede un registro abierto
+ * por accidente.
  */
 export function eventoAbierto(config: EventoConfig | null | undefined): boolean {
   if (!config) return false;
@@ -15,15 +23,8 @@ export function eventoAbierto(config: EventoConfig | null | undefined): boolean 
   if (!config.inicio && !config.fin) return false;
   const ahora = Date.now();
   if (config.inicio && ahora < new Date(config.inicio).getTime()) return false;
-  if (config.fin && ahora > new Date(config.fin).getTime()) return false;
+  if (config.fin && ahora >= new Date(config.fin).getTime()) return false; // a la hora de cierre ya está cerrado
   return true;
-}
-
-/** Regla única para /evento, /api/evento y el panel: el evento abierto más reciente; si ninguno
- *  está abierto, el más reciente (para mostrarlo como "actual, cerrado"). `eventos` viene
- *  ordenado por creado_en descendente. */
-export function eventoActual<T extends EventoConfig>(eventos: T[]): T | null {
-  return eventos.find(eventoAbierto) ?? eventos[0] ?? null;
 }
 
 /** true si el evento todavía no empezó (tiene fecha de apertura y está en el futuro). */
@@ -31,18 +32,18 @@ export function esFuturo(e: EventoConfig, ahora = Date.now()): boolean {
   return !!e.inicio && ahora < new Date(e.inicio).getTime();
 }
 
-/** Lo que muestra el panel: `enCurso` (abierto ahora), `programados` (empiezan después, del más
- *  cercano al más lejano) y `anteriores` (lo demás, del más reciente al más viejo). `actual` es la
- *  tarjeta principal: el que está en curso; si no hay, el próximo programado; si no, el último pasado.
- *  Antes un evento futuro caía en "anteriores" como "cerrado" y, sin evento abierto, el último
- *  creado (aunque fuera futuro) se mostraba como "último evento (cerrado)". */
+/** Clasificación del panel: `enCurso` (abierto ahora: ahí registra el QR), `programados` (esperan
+ *  su fecha, del más cercano al más lejano) y `anteriores` (cerrados por fecha o a mano, del más
+ *  reciente al más viejo). Un evento cerrado nunca vuelve a la tarjeta principal: va al historial.
+ *  `eventos` viene ordenado por creado_en descendente. */
 export function clasificar<T extends EventoConfig>(eventos: T[], ahora = Date.now()) {
   const enCurso = eventos.find((e) => eventoAbierto(e)) ?? null;
   const resto = eventos.filter((e) => e !== enCurso);
-  const programados = resto.filter((e) => esFuturo(e, ahora)).sort((a, b) => new Date(a.inicio!).getTime() - new Date(b.inicio!).getTime());
-  const anteriores = resto.filter((e) => !esFuturo(e, ahora));
-  const actual = enCurso ?? programados[0] ?? anteriores[0] ?? null;
-  return { actual, enCurso, programados: programados.filter((e) => e !== actual), anteriores: anteriores.filter((e) => e !== actual) };
+  const programados = resto
+    .filter((e) => esFuturo(e, ahora) && e.forzar_abierto !== false)
+    .sort((a, b) => new Date(a.inicio!).getTime() - new Date(b.inicio!).getTime());
+  const anteriores = resto.filter((e) => !programados.includes(e));
+  return { enCurso, programados, anteriores };
 }
 
 /** Venezuela es UTC-4 fijo (sin horario de verano desde 2016). Las funciones de Vercel corren en

@@ -1,9 +1,10 @@
 ---
 import { qrPngCacheado } from '../../lib/qr';
 import Panel from '../../layouts/Panel.astro';
+import EventoTarjeta from '../../components/panel/EventoTarjeta.astro';
 import { estaAutenticado } from '../../lib/auth';
 import { sb } from '../../lib/supabase';
-import { aLocal, clasificar, esFuturo, eventoAbierto } from '../../lib/evento';
+import { aLocal, clasificar, eventoAbierto, type Evento } from '../../lib/evento';
 import { fechaHoraVE } from '../../lib/fechas';
 import { origenPublico } from '../../data/site';
 
@@ -11,7 +12,6 @@ export const prerender = false;
 
 if (!estaAutenticado(Astro.cookies)) return Astro.redirect('/entrar', 303);
 
-interface Evento { id: string; nombre: string; inicio: string | null; fin: string | null; forzar_abierto: boolean | null; creado_en: string }
 const [{ data: eventosData }, { data: registros }] = await Promise.all([
   sb().from('eventos').select('*').order('creado_en', { ascending: false }),
   sb().from('registro_evento').select('evento_id'),
@@ -20,18 +20,22 @@ const eventos = (eventosData ?? []) as Evento[];
 // Conteo por evento en JS: una consulta ligera en vez de una por evento.
 const conteo: Record<string, number> = {};
 for (const r of registros ?? []) conteo[r.evento_id] = (conteo[r.evento_id] ?? 0) + 1;
-const { actual, enCurso, programados, anteriores } = clasificar(eventos);
-const abierto = Boolean(enCurso);
-const abiertos = eventos.filter(eventoAbierto);
-// Programados primero (el más cercano arriba), después los anteriores del más reciente al más viejo.
-const otros = [...programados, ...anteriores];
-const estadoDe = (e: Evento) => (eventoAbierto(e) ? 'abierto' : esFuturo(e) ? 'programado' : 'cerrado');
 const registrosDe = (e: Evento) => conteo[e.id] ?? 0;
-const forzarDe = (e: Evento | null) => (e?.forzar_abierto === true ? 'abierto' : e?.forzar_abierto === false ? 'cerrado' : 'auto');
+
+/** Un evento activo como mucho (ahí registra el QR). Si no hay, el próximo programado ocupa la
+ *  tarjeta principal. Todo lo que ya cerró, por fecha o a mano, está en el historial. */
+const { enCurso, programados, anteriores } = clasificar(eventos);
+const proximo = enCurso ? null : (programados[0] ?? null);
+const enEspera = enCurso ? programados : programados.slice(1);
+const abiertos = eventos.filter(eventoAbierto);
 const rango = (e: Evento) => (e.inicio && e.fin ? `${fechaHoraVE(e.inicio)} → ${fechaHoraVE(e.fin)}` : 'sin fechas');
 
 const p = Astro.url.searchParams;
-const aviso = p.get('guardado') ? 'Evento guardado.' : p.get('creado') ? 'Evento creado.' : p.get('eliminado') ? 'Evento eliminado junto con sus registros.' : '';
+const aviso = p.get('guardado') ? 'Evento guardado.'
+  : p.get('creado') ? 'Evento creado. Se abrirá solo a la hora de apertura.'
+  : p.get('abierto') ? 'Evento abierto: el QR ya registra aquí.'
+  : p.get('cerrado') ? 'Evento cerrado y pasado al historial. El QR queda desactivado hasta que abra el siguiente.'
+  : p.get('eliminado') ? 'Evento eliminado.' : '';
 const error = p.get('error');
 const con = p.get('con') ?? '';
 
@@ -41,77 +45,115 @@ const dataUrl = (b: Buffer) => 'data:image/png;base64,' + b.toString('base64');
 const campo = 'mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog';
 const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[12px]';
 ---
-<Panel title="Eventos" seccion="evento" eyebrow="Registro por QR" encabezado="Un código, todos los eventos." descripcion="El QR es permanente: apunta siempre a la página de registro. Cada evento tiene sus fechas, sus registros, su CSV y su sorteo; los anteriores quedan en el historial.">
-  <span slot="acciones" class:list={['inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[12px] font-bold uppercase tracking-[0.1em]', abierto ? 'border-neon/50 text-neon' : 'border-amber/50 text-amber']}>
-    <span class:list={['h-2 w-2 rounded-full', abierto ? 'bg-neon' : 'bg-amber']} aria-hidden="true"></span>{abierto ? `Registro abierto: ${actual!.nombre}` : 'Ningún evento activo'}
+<Panel title="Eventos" seccion="evento" eyebrow="Registro por QR" encabezado="Un código, un evento a la vez." descripcion="El QR es permanente y solo registra mientras hay un evento activo. Cada evento abre y cierra solo según su horario, o a mano; al cerrarse pasa al historial con sus registros, su CSV y su sorteo, y el QR queda desactivado hasta que abra el siguiente.">
+  <span slot="acciones" class:list={['inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[12px] font-bold uppercase tracking-[0.1em]', enCurso ? 'border-neon/50 text-neon' : 'border-amber/50 text-amber']}>
+    <span class:list={['h-2 w-2 rounded-full', enCurso ? 'bg-neon' : 'bg-amber']} aria-hidden="true"></span>{enCurso ? `Registro abierto: ${enCurso.nombre}` : 'QR desactivado: ningún evento activo'}
   </span>
 
   {aviso && <p class="mb-6 rounded-md border border-neon/40 bg-neon/10 px-4 py-3 text-[14px] text-white" data-reveal="fade">{aviso}</p>}
-  {error === '1' && <p class="mb-6 rounded-md border border-amber/40 bg-amber/10 px-4 py-3 text-[14px] text-amber" role="alert">Revisa los datos: hace falta nombre, fecha de apertura y de cierre, el cierre debe ser después de la apertura, y las fechas tienen que existir en el calendario (no hay 30 de febrero).</p>}
-  {error === '2' && <p class="mb-6 rounded-md border border-amber/40 bg-amber/10 px-4 py-3 text-[14px] text-amber" role="alert">Solo puede haber un evento a la vez. Esas fechas se cruzan con «{con}», que está abierto o programado para ese mismo período: ciérralo, ajusta sus fechas o elige otras para este.</p>}
-  {abiertos.length > 1 && <p class="mb-6 rounded-md border border-amber/40 bg-amber/10 px-4 py-3 text-[14px] text-amber" role="alert">Hay {abiertos.length} eventos abiertos a la vez; el QR registra en «{actual!.nombre}». Cierra los demás para evitar confusiones.</p>}
+  {error === '1' && <p class="mb-6 rounded-md border border-amber/40 bg-amber/10 px-4 py-3 text-[14px] text-amber" role="alert">Revisa los datos: hace falta nombre, fecha de apertura y de cierre, el cierre debe ser después de la apertura (y en el futuro para poder abrir), y las fechas tienen que existir en el calendario.</p>}
+  {error === '2' && <p class="mb-6 rounded-md border border-amber/40 bg-amber/10 px-4 py-3 text-[14px] text-amber" role="alert">Solo puede haber un evento a la vez: esas fechas se cruzan con «{con}», que está activo o programado para ese mismo período. Ciérralo, cámbiale las fechas o elige otras para este.</p>}
+  {error === '3' && <p class="mb-6 rounded-md border border-amber/40 bg-amber/10 px-4 py-3 text-[14px] text-amber" role="alert">«{con}» tiene registros y forma parte del historial, así que no se elimina. Si necesitas sus datos, exporta el CSV.</p>}
+  {abiertos.length > 1 && <p class="mb-6 rounded-md border border-amber/40 bg-amber/10 px-4 py-3 text-[14px] text-amber" role="alert">Hay {abiertos.length} eventos abiertos a la vez (configuración antigua); el QR registra en «{enCurso!.nombre}». Cierra los demás desde el historial.</p>}
 
   <div class="grid min-w-0 gap-6 lg:grid-cols-[1fr_340px]" data-reveal-group data-stagger="0.1">
     <div class="grid min-w-0 gap-6">
-      {actual ? (
-        <div class="grid min-w-0 gap-5 rounded-md border border-white/10 bg-panel p-6 lg:p-8" data-tarjeta>
+      {enCurso ? (
+        <div class="grid min-w-0 gap-5 rounded-md border border-neon/40 bg-panel p-6 lg:p-8" data-tarjeta>
           <div class="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <span class="eyebrow">{abierto ? 'Evento en curso' : esFuturo(actual) ? 'Próximo evento (programado)' : 'Último evento (cerrado)'}</span>
-              <h2 class="display mt-2 text-[24px] text-white">{actual.nombre}</h2>
-              <p class="mt-1 font-mono text-[12px] text-mist">{rango(actual)}</p>
+              <span class="eyebrow">Evento activo</span>
+              <h2 class="display mt-2 text-[24px] text-white">{enCurso.nombre}</h2>
+              <p class="mt-1 font-mono text-[12px] text-mist">{rango(enCurso)}</p>
             </div>
             <div class="text-right">
-              <span class="display block text-[44px] leading-none text-neon tabular-nums" data-count={registrosDe(actual)}>{registrosDe(actual)}</span>
+              <span class="display block text-[44px] leading-none text-neon tabular-nums" data-count={registrosDe(enCurso)}>{registrosDe(enCurso)}</span>
               <span class="text-[12px] font-semibold uppercase tracking-[0.1em] text-mist">registros</span>
             </div>
           </div>
           <div class="flex flex-wrap gap-2">
-            <button type="button" class={botonQr} data-csv data-evento={actual.id} data-nombre={actual.nombre}>Exportar CSV</button>
-            <button type="button" class="btn-primary px-4 py-2.5 text-[13px]" data-ganador data-evento={actual.id}>Elegir ganador</button>
+            <button type="button" class={botonQr} data-csv data-evento={enCurso.id} data-nombre={enCurso.nombre}>Exportar CSV</button>
+            <button type="button" class="btn-primary px-4 py-2.5 text-[13px]" data-ganador data-evento={enCurso.id}>Elegir ganador</button>
+            <form method="post" action="/api/panel/evento" data-ajax data-confirmar={`¿Cerrar «${enCurso.nombre}» ahora? El QR dejará de registrar y el evento pasará al historial.`}>
+              <input type="hidden" name="_accion" value="cerrar" />
+              <input type="hidden" name="id" value={enCurso.id} />
+              <button type="submit" class="btn-ghost border border-amber/50 px-3 py-2.5 text-[12px] text-amber">Cerrar evento ahora</button>
+            </form>
           </div>
           <p class="hidden rounded-md border border-neon/40 bg-neon/10 px-4 py-3 text-[15px] text-white" data-resultado></p>
 
           <form method="post" action="/api/panel/evento" data-ajax class="grid min-w-0 gap-4 border-t border-white/10 pt-5 sm:grid-cols-2">
             <input type="hidden" name="_accion" value="guardar" />
-            <input type="hidden" name="id" value={actual.id} />
+            <input type="hidden" name="id" value={enCurso.id} />
             <div class="sm:col-span-2">
               <label class={campo} for="nombre">Nombre del evento</label>
-              <input name="nombre" id="nombre" value={actual.nombre} required class="field" />
+              <input name="nombre" id="nombre" value={enCurso.nombre} required class="field" />
             </div>
             <div class="min-w-0">
-              <label class={campo} for="inicio">Abre (hora de Venezuela)</label>
-              <input type="datetime-local" name="inicio" id="inicio" value={aLocal(actual.inicio)} data-bloqueado={abierto ? 'true' : 'false'} class="campo-fecha field w-full min-w-0" />
-              {abierto && <p class="mt-1.5 text-[12px] text-mist">El evento ya está en curso: solo se puede cambiar el cierre.</p>}
+              <label class={campo} for="inicio">Abrió (hora de Venezuela)</label>
+              <input type="datetime-local" name="inicio" id="inicio" value={aLocal(enCurso.inicio)} data-bloqueado="true" class="campo-fecha field w-full min-w-0" />
+              <p class="mt-1.5 text-[12px] text-mist">Ya está en curso: solo se puede mover el cierre.</p>
             </div>
             <div class="min-w-0">
               <label class={campo} for="fin">Cierra (hora de Venezuela)</label>
-              <input type="datetime-local" name="fin" id="fin" value={aLocal(actual.fin)} class="campo-fecha field w-full min-w-0" />
+              <input type="datetime-local" name="fin" id="fin" value={aLocal(enCurso.fin)} class="campo-fecha field w-full min-w-0" />
             </div>
+            <button type="submit" class="btn-primary self-start sm:col-span-2" data-magnetic>Guardar</button>
+          </form>
+        </div>
+      ) : proximo ? (
+        <div class="grid min-w-0 gap-5 rounded-md border border-white/10 bg-panel p-6 lg:p-8" data-tarjeta>
+          <div>
+            <span class="eyebrow">Próximo evento (programado)</span>
+            <h2 class="display mt-2 text-[24px] text-white">{proximo.nombre}</h2>
+            <p class="mt-1 font-mono text-[12px] text-mist">{rango(proximo)}</p>
+            <p class="mt-2 text-[13px] text-mist">El QR se activará solo a la hora de apertura. Hasta entonces, quien lo escanee verá que el registro no está disponible.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <form method="post" action="/api/panel/evento" data-ajax data-confirmar={`¿Abrir «${proximo.nombre}» ahora? El QR empezará a registrar de inmediato y cerrará a la hora prevista.`}>
+              <input type="hidden" name="_accion" value="abrir" />
+              <input type="hidden" name="id" value={proximo.id} />
+              <button type="submit" class="btn-primary px-4 py-2.5 text-[13px]">Abrir ahora</button>
+            </form>
+            <form method="post" action="/api/panel/evento" data-ajax data-confirmar={`¿Eliminar «${proximo.nombre}»?`}>
+              <input type="hidden" name="_accion" value="eliminar" />
+              <input type="hidden" name="id" value={proximo.id} />
+              <button type="submit" class="btn-ghost border border-white/15 px-3 py-2.5 text-[12px] text-amber">Eliminar</button>
+            </form>
+          </div>
+
+          <form method="post" action="/api/panel/evento" data-ajax class="grid min-w-0 gap-4 border-t border-white/10 pt-5 sm:grid-cols-2">
+            <input type="hidden" name="_accion" value="guardar" />
+            <input type="hidden" name="id" value={proximo.id} />
             <div class="sm:col-span-2">
-              <span class={campo}>Interruptor manual</span>
-              <div class="grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="Interruptor manual">
-                <label class="segmento"><input type="radio" name="forzar" value="auto" autocomplete="off" class="sr-only" checked={forzarDe(actual) === 'auto'} /> Automático</label>
-                <label class="segmento"><input type="radio" name="forzar" value="abierto" autocomplete="off" class="sr-only" checked={forzarDe(actual) === 'abierto'} /> Forzar abierto</label>
-                <label class="segmento"><input type="radio" name="forzar" value="cerrado" autocomplete="off" class="sr-only" checked={forzarDe(actual) === 'cerrado'} /> Forzar cerrado</label>
-              </div>
-              {forzarDe(actual) !== 'auto' && (
-                <p class="mt-2 rounded-md border border-amber/40 bg-amber/10 px-3 py-2 text-[13px] text-amber" role="alert">
-                  {forzarDe(actual) === 'abierto' ? 'Forzado abierto: ' : 'Forzado cerrado: '}
-                  las fechas de arriba no tienen efecto mientras este interruptor no esté en "Automático".
-                </p>
-              )}
+              <label class={campo} for="nombre">Nombre del evento</label>
+              <input name="nombre" id="nombre" value={proximo.nombre} required class="field" />
+            </div>
+            <div class="min-w-0">
+              <label class={campo} for="inicio">Abre (hora de Venezuela)</label>
+              <input type="datetime-local" name="inicio" id="inicio" value={aLocal(proximo.inicio)} class="campo-fecha field w-full min-w-0" />
+            </div>
+            <div class="min-w-0">
+              <label class={campo} for="fin">Cierra (hora de Venezuela)</label>
+              <input type="datetime-local" name="fin" id="fin" value={aLocal(proximo.fin)} class="campo-fecha field w-full min-w-0" />
             </div>
             <button type="submit" class="btn-primary self-start sm:col-span-2" data-magnetic>Guardar</button>
           </form>
         </div>
       ) : (
-        <p class="rounded-md border border-dashed border-white/15 p-10 text-center text-mist">Todavía no hay eventos. Crea el primero aquí abajo.</p>
+        <div class="rounded-md border border-dashed border-white/15 p-8 text-center">
+          <p class="text-[15px] font-semibold text-white">No hay ningún evento activo ni programado.</p>
+          <p class="mt-1 text-[14px] text-mist">El QR está desactivado: quien lo escanee verá que el registro no está disponible. Crea el siguiente aquí abajo.</p>
+        </div>
       )}
 
       <form method="post" action="/api/panel/evento" data-ajax class="grid min-w-0 gap-4 rounded-md border border-white/10 bg-panel p-6 sm:grid-cols-2 lg:p-8">
         <input type="hidden" name="_accion" value="crear" />
-        <div class="sm:col-span-2"><span class="eyebrow">Nuevo evento</span><h2 class="display mt-2 text-[24px] text-white">Programar el siguiente</h2></div>
+        <div class="sm:col-span-2">
+          <span class="eyebrow">Nuevo evento</span>
+          <h2 class="display mt-2 text-[24px] text-white">Programar el siguiente</h2>
+          <p class="mt-2 text-[13px] text-mist">Abre y cierra solo a esas horas; también puedes abrirlo o cerrarlo a mano. No puede cruzarse con el evento activo ni con otro programado.</p>
+        </div>
         <div class="sm:col-span-2">
           <label class={campo} for="nuevo-nombre">Nombre</label>
           <input name="nombre" id="nuevo-nombre" required class="field" placeholder="Feria Industrial 2026" />
@@ -127,31 +169,24 @@ const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[
         <button type="submit" class="btn-ghost self-start border border-white/15 sm:col-span-2">Crear evento</button>
       </form>
 
+      {enEspera.length > 0 && (
+        <div class="rounded-md border border-white/10 bg-panel p-6 lg:p-8">
+          <span class="eyebrow">Programados</span>
+          <h2 class="display mb-4 mt-2 text-[24px] text-white">Esperan su fecha de apertura</h2>
+          <div class="grid gap-3">
+            {enEspera.map((e) => <EventoTarjeta evento={e} estado="programado" registros={registrosDe(e)} />)}
+          </div>
+        </div>
+      )}
+
       <div class="rounded-md border border-white/10 bg-panel p-6 lg:p-8">
         <span class="eyebrow">Historial</span>
-        <h2 class="display mb-4 mt-2 text-[24px] text-white">Programados y anteriores</h2>
-        {otros.length === 0 ? (
-          <p class="rounded-md border border-dashed border-white/15 p-8 text-center text-[14px] text-mist">Aquí aparecen los eventos programados y los ya terminados, cada uno con sus registros, su CSV y su sorteo.</p>
+        <h2 class="display mb-4 mt-2 text-[24px] text-white">Eventos cerrados</h2>
+        {anteriores.length === 0 ? (
+          <p class="rounded-md border border-dashed border-white/15 p-8 text-center text-[14px] text-mist">Cuando un evento cierre, por horario o a mano, aparecerá aquí con sus registros, su CSV y su sorteo.</p>
         ) : (
           <div class="grid gap-3">
-            {otros.map((e) => (
-              <div class="grid gap-3 rounded-md border border-white/10 bg-ink/40 p-4 sm:grid-cols-[1fr_auto] sm:items-center" data-tarjeta>
-                <div class="min-w-0">
-                  <p class="truncate text-[16px] font-semibold text-white">{e.nombre} <span class:list={['ml-2 text-[11px] font-bold uppercase tracking-[0.1em]', estadoDe(e) === 'abierto' ? 'text-neon' : estadoDe(e) === 'programado' ? 'text-amber' : 'text-mist']}>{estadoDe(e)}</span></p>
-                  <p class="font-mono text-[12px] text-mist">{rango(e)} · <span class="text-white">{registrosDe(e)}</span> registro{registrosDe(e) === 1 ? '' : 's'}</p>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                  <button type="button" class="btn-ghost border border-white/15 px-3 py-2 text-[12px]" data-csv data-evento={e.id} data-nombre={e.nombre}>CSV</button>
-                  <button type="button" class="btn-ghost border border-white/15 px-3 py-2 text-[12px]" data-ganador data-evento={e.id}>Ganador</button>
-                  <form method="post" action="/api/panel/evento" data-ajax data-confirmar={`¿Eliminar «${e.nombre}» y sus ${registrosDe(e)} registros?`}>
-                    <input type="hidden" name="_accion" value="eliminar" />
-                    <input type="hidden" name="id" value={e.id} />
-                    <button type="submit" class="btn-ghost border border-white/15 px-3 py-2 text-[12px] text-amber">Eliminar</button>
-                  </form>
-                </div>
-                <p class="hidden rounded-md border border-neon/40 bg-neon/10 px-4 py-2 text-[14px] text-white sm:col-span-2" data-resultado></p>
-              </div>
-            ))}
+            {anteriores.map((e) => <EventoTarjeta evento={e} estado={eventoAbierto(e) ? 'abierto' : 'cerrado'} registros={registrosDe(e)} />)}
           </div>
         )}
       </div>

@@ -5,13 +5,13 @@
 import { Image } from 'astro:assets';
 import PanelBase from '../layouts/PanelBase.astro';
 import { sb } from '../lib/supabase';
-import { eventoAbierto, eventoActual } from '../lib/evento';
+import { clasificar } from '../lib/evento';
 import fotoFondo from '../assets/img/hero-slide-3.jpg';
 
 export const prerender = false;
 
 const { data: eventos } = await sb().from('eventos').select('id, inicio, fin, forzar_abierto').order('creado_en', { ascending: false });
-const abierto = eventoAbierto(eventoActual(eventos ?? []));
+const abierto = Boolean(clasificar(eventos ?? []).enCurso);
 ---
 <PanelBase title="Registro del evento">
   <nav slot="nav"></nav>
