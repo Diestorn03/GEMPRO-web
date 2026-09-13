@@ -46,9 +46,11 @@ function vencimiento(segundos: number = SESION_SEGUNDOS): string {
 
 /** Opciones comunes de las cookies de sesión. `secure` cuando la petición llegó por https
  *  (siempre en Vercel); en local por http la cookie no se enviaría y no se podría entrar.
- *  `maxAge` en `undefined` deja la cookie sin Max-Age: el navegador la borra al cerrarse. */
-export function opcionesCookie(url: URL, maxAge: number | undefined = SESION_SEGUNDOS) {
-  return { httpOnly: true, sameSite: 'lax' as const, secure: url.protocol === 'https:', path: '/', maxAge };
+ *  Sin `maxAge` la cookie no lleva Max-Age: el navegador la borra al cerrarse ("sin recordar").
+ *  Ojo: no usar un valor por defecto en el parámetro — pasar `undefined` lo activaría y la cookie
+ *  saldría con 30 días aunque el usuario no marcara "recordar" (así estuvo hasta la auditoría). */
+export function opcionesCookie(url: URL, maxAge?: number) {
+  return { httpOnly: true, sameSite: 'lax' as const, secure: url.protocol === 'https:', path: '/', ...(maxAge ? { maxAge } : {}) };
 }
 
 export function contrasenaCorrecta(intento: string): boolean {

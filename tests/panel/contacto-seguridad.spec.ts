@@ -53,7 +53,7 @@ test.describe('Formulario de contacto', () => {
     expect((await sb().from('mensajes').select('id').eq('nombre', datos.nombre).maybeSingle()).data).toBeNull();
   });
   test('JSON inválido → 400; GET → 405', async ({ request }) => {
-    expect((await request.post('/api/contacto', { data: '{rota', headers: { 'content-type': 'application/json' } })).status()).toBe(400);
+    expect((await request.post('/api/contacto', { data: Buffer.from('{rota'), headers: { 'content-type': 'application/json' } })).status()).toBe(400);
     expect((await request.get('/api/contacto')).status()).toBe(405);
   });
   test('los campos se recortan: mensaje a 2000 y nombre a 120', async ({ request }) => {

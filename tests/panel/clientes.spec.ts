@@ -83,12 +83,14 @@ test.describe('Crear acceso de cliente', () => {
     expect(data?.length).toBe(2);
     expect(data![0].token).not.toBe(data![1].token);
   });
-  test('un nombre con HTML se guarda tal cual y el panel lo muestra escapado', async ({ request }) => {
+  test('un nombre con HTML se guarda tal cual y el navegador lo muestra como texto, sin crear etiquetas', async ({ request, page }) => {
     const nombre = `${nombrePrueba('X')} <img src=x onerror=alert(1)>`;
     await formulario(request, '/api/panel/clientes', { nombre_empresa: nombre, password: 'clave-de-prueba-123' });
     const html = await (await request.get('/panel')).text();
-    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
-    expect(html).not.toContain('<img src=x onerror');
+    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;'); // en el texto visible va escapado
+    await entrarPagina(page);
+    await expect(page.locator('img[src="x"]')).toHaveCount(0); // ninguna etiqueta nació del nombre
+    await expect(page.locator('.fila-cliente', { hasText: '<img src=x onerror=alert(1)>' })).toHaveCount(1); // y se lee tal cual
   });
   test('la lista del panel muestra empresa, contacto · cargo · correo, link del portal y logo', async ({ request }) => {
     const c = await crearCliente(request, { contacto: 'Luis Rojas', contacto_cargo: 'Gerente', contacto_correo: 'luis@planta.com' }, archivo('logo.png', 'image/png', PNG_1PX));
@@ -294,8 +296,12 @@ test.describe('Informes técnicos', () => {
   });
   test('nombre con caracteres raros: la ruta en Storage queda saneada y el nombre original se conserva', async ({ request }) => {
     const c = await crearCliente(request);
-    const ruta = await subir(request, c.id, 'Informe ñandú #3 (final) ✓.pdf');
-    expect(ruta).toMatch(new RegExp(`^${c.id}/\\d+-Informe___and___3__final____\\.pdf$`));
+    const original = 'Informe ñandú #3 (final) ✓.pdf';
+    const ruta = await subir(request, c.id, original);
+    const saneado = original.replace(/[^a-zA-Z0-9._-]/g, '_'); // misma regla que api/panel/informes.ts
+    expect(ruta).toBe(ruta.replace(/\d+-/, 'T-')); // sin cambios accidentales al comparar
+    expect(ruta.endsWith(`-${saneado}`)).toBe(true);
+    expect(ruta.startsWith(`${c.id}/`)).toBe(true);
     const { data } = await sb().from('informes').select('nombre_archivo').eq('cliente_id', c.id).maybeSingle();
     expect(data?.nombre_archivo).toBe('Informe ñandú #3 (final) ✓.pdf');
   });
@@ -374,6 +380,7 @@ test.describe('Panel de clientes (navegador)', () => {
     await expect(page).toHaveURL(/\/panel\?nuevo=1$/);
     await expect(page.getByText('Cliente creado')).toBeVisible();
     await expect(page.locator('.fila-cliente', { hasText: nombre })).toContainText('Carla Díaz · Analista · carla@x.com');
+    await expect(page.locator('#buscador-clientes')).toHaveAttribute('data-listo', '1'); // el filtro se engancha en astro:page-load
     await page.fill('#buscador-clientes', nombre.toLowerCase());
     await expect(page.locator('.fila-cliente:visible')).toHaveCount(1);
     await page.fill('#buscador-clientes', 'zzz-no-existe-zzz');

@@ -97,6 +97,8 @@ test.describe('Cookies manipuladas', () => {
 });
 
 test.describe('Límite de intentos', () => {
+  // Las pruebas anteriores de este archivo también dejan intentos fallidos: se parte de cero y se limpia al salir.
+  test.beforeEach(async () => { await sb().from('intentos_acceso').delete().eq('ruta', 'entrar'); });
   test.afterEach(async () => { await sb().from('intentos_acceso').delete().eq('ruta', 'entrar'); });
   test('tras 10 fallos, el 11º intento da error=2 aunque la contraseña sea correcta', async ({ request }) => {
     for (let i = 1; i <= 10; i++) expect((await entrar(request, `mala-${i}`)).headers()['location'], `intento ${i}`).toBe('/entrar?error=1');

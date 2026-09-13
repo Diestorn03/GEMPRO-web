@@ -294,7 +294,7 @@ test.describe('Registro público por QR', () => {
     expect((await sb().from('registro_evento').select('*', { count: 'exact', head: true })).count).toBe(0);
   });
   test('cuerpo que no es JSON → 400', async ({ request }) => {
-    expect((await request.post('/api/evento', { data: 'nombre=x', headers: { 'content-type': 'application/json' } })).status()).toBe(400);
+    expect((await request.post('/api/evento', { data: Buffer.from('nombre=x'), headers: { 'content-type': 'application/json' } })).status()).toBe(400);
   });
   test('teléfono vacío se guarda como null; campos largos se recortan', async ({ request }) => {
     await registrar(request, { telefono: '', nombre: 'PRUEBA-' + 'n'.repeat(300), empresa: 'e'.repeat(300), cargo: 'c'.repeat(300) });
@@ -310,9 +310,13 @@ test.describe('Registro público por QR', () => {
     expect((await sb().from('registro_evento').select('*', { count: 'exact', head: true })).count).toBe(5);
   });
   test('límite: 120 registros por hora desde la misma conexión, el 121º responde 429', async ({ request }) => {
-    test.setTimeout(240_000);
-    for (let i = 0; i < 120; i++) expect((await registrar(request, { correo: `p${i}@x.com` })).status(), `registro ${i + 1}`).toBe(200);
-    expect((await registrar(request, {})).status()).toBe(429);
+    // Un registro real para saber con qué IP nos ve el servidor; el resto del cupo se siembra en la tabla.
+    expect((await registrar(request, { correo: 'p1@x.com' })).status()).toBe(200);
+    const { data: ultimo } = await sb().from('intentos_acceso').select('ip').eq('ruta', 'evento').order('creado_en', { ascending: false }).limit(1).maybeSingle();
+    expect(ultimo?.ip).toBeTruthy();
+    await sb().from('intentos_acceso').insert(Array.from({ length: 118 }, () => ({ ip: ultimo!.ip, ruta: 'evento' })));
+    expect((await registrar(request, { correo: 'p120@x.com' })).status(), 'el registro número 120 todavía pasa').toBe(200);
+    expect((await registrar(request, { correo: 'p121@x.com' })).status(), 'el 121 se bloquea').toBe(429);
   });
   test('el formulario público (navegador) registra y muestra el agradecimiento', async ({ page }) => {
     await page.goto('/evento');

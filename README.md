@@ -23,6 +23,10 @@ npm run dev            # desarrollo con recarga en http://localhost:4321
 npm run build          # compila para Vercel (el adaptador no soporta vista previa local:
                         # astro preview no funciona con @astrojs/vercel; usar npm run dev)
 npm test               # pruebas Playwright contra astro dev en local (o BASE_URL=... contra un despliegue)
+npm run test:panel     # auditoría del panel: 200+ casos reales (clientes, informes, noticias, eventos, QR, sesiones)
+                        # contra scripts/servidor-pruebas.mjs (puerto 4322, .env.pruebas). CREA Y BORRA DATOS: hoy corre
+                        # sobre el proyecto de Supabase actual porque todos sus datos son de prueba; con datos reales,
+                        # apuntar .env.pruebas a un proyecto aparte. Vacía las tablas de eventos y registros.
 npm run qa             # build + astro dev + pruebas + capturas + Lighthouse (capturas/)
 npm run check          # comprobación de tipos de Astro
 ```

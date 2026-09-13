@@ -78,7 +78,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   if ((inicioRaw && !inicio) || (finRaw && !fin)) return volver('error=1');
   // Evento en curso: la apertura ya ocurrió y no se toca (el campo va bloqueado); solo se mueve el cierre.
   const enCurso = ms(evento.inicio) <= Date.now() && Date.now() < ms(evento.fin);
-  const nuevoInicio = enCurso ? evento.inicio : inicio;
+  // Campo vacío = conservar la fecha que tenía (la auditoría encontró que devolvía error).
+  const nuevoInicio = enCurso ? evento.inicio : (inicio ?? evento.inicio);
   const nuevoFin = fin ?? evento.fin;
   if (!nuevoInicio || !nuevoFin || nuevoFin <= nuevoInicio) return volver('error=1');
   const ocupado = await choque({ id, inicio: nuevoInicio, fin: nuevoFin });

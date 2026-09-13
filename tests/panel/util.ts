@@ -49,6 +49,8 @@ export async function entrarPagina(page: Page, password = ENV.ADMIN_PASSWORD) {
   await page.goto('/entrar');
   await page.fill('#password', password);
   await page.getByRole('button', { name: 'Entrar' }).click();
+  // El formulario se envía por fetch y luego navega: sin esperar, un goto inmediato llegaría sin cookie.
+  if (password === ENV.ADMIN_PASSWORD) await page.waitForURL(/\/panel$/);
 }
 
 /** Formulario del panel por API (urlencoded o multipart), con origen correcto y sin seguir la redirección. */

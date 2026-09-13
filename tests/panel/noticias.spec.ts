@@ -96,12 +96,16 @@ test.describe('Noticias', () => {
     expect(destino(await formulario(request, '/api/panel/noticias', { _accion: 'eliminar', id: '11111111-2222-4333-8444-555555555555', imagen_url: '' }))).toBe('/panel/noticias');
     expect(destino(await formulario(request, '/api/panel/noticias', { _accion: 'eliminar', id: '', imagen_url: '' }))).toBe('/panel/noticias');
   });
-  test('título con HTML se muestra escapado en la lista, el detalle y el panel', async ({ request }) => {
+  test('título con HTML se muestra como texto en la lista, el detalle y el panel, sin crear etiquetas', async ({ request, page }) => {
     const n = await crearNoticia(request, { titulo: `${nombrePrueba('X')} <script>alert(1)</script>` });
+    await entrarPagina(page);
     for (const ruta of ['/noticias', `/noticias/${n.id}`, '/panel/noticias']) {
       const html = await (await request.get(ruta)).text();
-      expect(html, ruta).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
-      expect(html, ruta).not.toContain('<script>alert(1)</script>');
+      expect(html, ruta).toContain('&lt;script&gt;alert(1)&lt;/script&gt;'); // en el texto visible va escapado
+      await page.goto(ruta);
+      const ejecutable = await page.evaluate(() => Array.from(document.scripts).some((s) => s.textContent.includes('alert(1)')));
+      expect(ejecutable, `${ruta}: ningún <script> nace del título`).toBe(false);
+      await expect(page.locator('main'), ruta).toContainText('<script>alert(1)</script>');
     }
   });
   test('la lista pública muestra la más reciente primero y recorta el extracto a 160 caracteres', async ({ request }) => {
