@@ -21,12 +21,14 @@ gsap.registerPlugin(ScrollTrigger, SplitText);
 let lenis: Lenis | null = null;
 let ctx: gsap.Context | null = null;
 let tickerFn: ((time: number) => void) | null = null;
+let ocioso = 0; // id de requestIdleCallback pendiente
 
 const prefersReduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function setupLenis() {
   // data-scroll-nativo (el panel): desplazamiento nativo del navegador; el suavizado es para el sitio de mercadeo.
-  if (lenis || prefersReduced() || document.documentElement.hasAttribute('data-scroll-nativo')) return;
+  // Solo con rueda/puntero fino: en pantallas táctiles Lenis no suaviza nada y aun así corre un tick por cuadro.
+  if (lenis || prefersReduced() || document.documentElement.hasAttribute('data-scroll-nativo') || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
   lenis = new Lenis({ lerp: 0.11, smoothWheel: true, wheelMultiplier: 0.95 });
   lenis.on('scroll', ScrollTrigger.update);
   tickerFn = (time) => lenis?.raf(time * 1000);
@@ -214,9 +216,6 @@ function init() {
         splitHeadlines();
         reveals();
         counters();
-        parallax();
-        drawPaths();
-        magnetic();
       } else {
         document.querySelectorAll<HTMLElement>('[data-split]').forEach((el) => { el.style.visibility = 'visible'; });
         document.querySelectorAll<HTMLElement>('[data-count]').forEach((el) => {
@@ -229,6 +228,13 @@ function init() {
     root.classList.add('motion-ready');
     ScrollTrigger.refresh();
     revisarPendientesLuego();
+    // Lo que no hace falta para el primer cuadro (parallax, trazos, botones magnéticos) se configura
+    // en un momento ocioso: menos bloqueo del hilo principal al cargar en móvil. Se añade al mismo
+    // contexto de GSAP para que destroy() también lo revierta.
+    if (!prefersReduced()) {
+      const luego = () => { ocioso = 0; ctx?.add(() => { parallax(); drawPaths(); magnetic(); }); ScrollTrigger.refresh(); };
+      ocioso = window.requestIdleCallback ? window.requestIdleCallback(luego, { timeout: 400 }) : window.setTimeout(luego, 50);
+    }
   };
   // Las líneas del titular dependen de la fuente ya cargada.
   if (document.fonts?.ready) document.fonts.ready.then(run, run);
@@ -236,6 +242,7 @@ function init() {
 }
 
 function destroy() {
+  if (ocioso) { (window.cancelIdleCallback ?? clearTimeout)(ocioso); ocioso = 0; }
   ctx?.revert();
   ctx = null;
   ScrollTrigger.getAll().forEach((t) => t.kill());

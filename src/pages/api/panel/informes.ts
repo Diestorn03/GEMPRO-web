@@ -55,9 +55,11 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const clienteId = String(form.get('cliente_id') ?? '');
   if (String(form.get('_accion') ?? '') === 'eliminar') {
     const id = String(form.get('id') ?? '');
-    const ruta = String(form.get('ruta_storage') ?? '');
-    if (id) {
-      if (ruta) await sb().storage.from(BUCKET).remove([ruta]);
+    // La ruta a borrar en Storage sale de la fila, no del formulario: así la petición solo puede
+    // borrar el archivo de ese informe y no cualquier objeto del bucket.
+    const { data: inf } = UUID.test(id) ? await sb().from('informes').select('ruta_storage').eq('id', id).maybeSingle() : { data: null };
+    if (inf) {
+      await sb().storage.from(BUCKET).remove([inf.ruta_storage]);
       await sb().from('informes').delete().eq('id', id);
     }
   }

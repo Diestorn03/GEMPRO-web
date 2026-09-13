@@ -2,6 +2,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sb } from '../../lib/supabase';
+import { igual } from '../../lib/auth';
 
 /**
  * Latido diario (cron de Vercel, ver vercel.json): una ESCRITURA real en la base para que el
@@ -9,12 +10,14 @@ import { sb } from '../../lib/supabase';
  * /api/salud la muestra como `ultimo_latido` para poder comprobar que el cron corre.
  *
  * Vercel firma sus llamadas de cron con `Authorization: Bearer CRON_SECRET` en cuanto esa
- * variable existe (Project Settings → Environment Variables). Mientras no se configure, el
- * endpoint queda como antes (sin exigirla) para no romper el cron ya andando.
+ * variable existe (Project Settings → Environment Variables). En Vercel es obligatoria: sin ella
+ * el endpoint responde 503 en vez de quedar abierto a que cualquiera gaste cuota de Supabase con
+ * escrituras. En local (sin VERCEL) se puede probar sin la variable.
  */
 export const GET: APIRoute = async ({ request }) => {
   const secreto = process.env.CRON_SECRET;
-  if (secreto && request.headers.get('authorization') !== `Bearer ${secreto}`) {
+  if (!secreto && process.env.VERCEL) return new Response('Falta CRON_SECRET en Vercel', { status: 503 });
+  if (secreto && !igual(request.headers.get('authorization') ?? '', `Bearer ${secreto}`)) {
     return new Response('No autorizado', { status: 401 });
   }
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });

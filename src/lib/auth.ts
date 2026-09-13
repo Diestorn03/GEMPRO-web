@@ -28,7 +28,8 @@ function firmar(texto: string): string {
   return createHmac('sha256', secreto()).update(texto).digest('hex');
 }
 
-function igual(a: string, b: string): boolean {
+/** Comparación de tiempo constante sobre hashes de tamaño fijo (sirve para secretos de cualquier largo). */
+export function igual(a: string, b: string): boolean {
   const h = (s: string) => createHash('sha256').update(s).digest();
   return timingSafeEqual(h(a), h(b));
 }
@@ -57,14 +58,19 @@ export function contrasenaCorrecta(intento: string): boolean {
   return igual(intento.trim(), real);
 }
 
+/** La firma incluye un hash de ADMIN_PASSWORD: cambiar la contraseña del panel cierra todas las
+ *  sesiones abiertas (una cookie copiada deja de valer) sin tocar AUTH_SECRET, que además cifra
+ *  las contraseñas de los clientes. */
+const textoSesion = (exp: string) => 'gempro-panel:' + createHash('sha256').update(((import.meta.env.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD) || '').trim()).digest('hex') + ':' + exp;
+
 export function valorCookie(recordar: boolean = true): string {
   const exp = vencimiento(recordar ? SESION_SEGUNDOS : SESION_SIN_RECORDAR_SEGUNDOS);
-  return `${exp}.${firmar('gempro-panel:' + exp)}`;
+  return `${exp}.${firmar(textoSesion(exp))}`;
 }
 
 export function estaAutenticado(cookies: AstroCookies): boolean {
   const [exp, firma] = (cookies.get(COOKIE)?.value ?? '').split('.');
-  return firmaVigente(exp, firma, (e) => 'gempro-panel:' + e);
+  return firmaVigente(exp, firma, textoSesion);
 }
 
 /** Contraseña propia de cada cliente del portal: scrypt con sal aleatoria por cliente (no se

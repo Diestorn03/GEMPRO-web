@@ -18,7 +18,7 @@ test.describe('Inicio', () => {
     await page.goto('/');
     await expect(page).toHaveTitle(/GEMPRO/);
     for (const id of SECCIONES) await expect(page.locator(`#${id}`), `sección #${id}`).toHaveCount(1);
-    await expect(page.locator('h1')).toContainText(/Escuchamos/i);
+    await expect(page.locator('main h1')).toContainText(/Escuchamos/i);
     expect(errors, errors.join('\n')).toEqual([]);
   });
 
@@ -170,9 +170,44 @@ test.describe('Servicios', () => {
       await page.locator('nav[aria-label="Principal"] a[href="/servicios"]').click();
     }
     await expect(page).toHaveURL(/\/servicios/);
-    await expect(page.locator('h1')).toContainText(/síntoma/i);
+    await expect(page.locator('main h1')).toContainText(/síntoma/i);
     for (const id of ['predictivo', 'proactivo', 'preventivo', 'correctivo']) await expect(page.locator(`section#${id}`)).toHaveCount(1);
     await expect(page.locator('html')).toHaveClass(/motion-ready/);
     expect(errors, errors.join('\n')).toEqual([]);
+  });
+});
+
+test.describe('Cabeceras', () => {
+  // Las de vercel.json (CSP, X-Frame-Options, caché inmutable) solo existen desplegado en Vercel:
+  // con BASE_URL apuntando a una vista previa o a producción se comprueban; en local se omiten.
+  const base = process.env.BASE_URL || '';
+  const local = !base || base.includes('127.0.0.1') || base.includes('localhost');
+
+  test('las rutas privadas no se guardan en caché', async ({ request }) => {
+    const res = await request.get('/entrar');
+    expect(res.headers()['cache-control']).toContain('no-store');
+    expect(res.headers()['x-frame-options']).toBe('DENY');
+  });
+
+  test('todo el sitio sale con CSP, X-Frame-Options y robots.txt', async ({ request }) => {
+    test.skip(local, 'cabeceras de vercel.json: solo desplegado en Vercel');
+    const res = await request.get('/');
+    expect(res.headers()['content-security-policy']).toContain("frame-ancestors 'none'");
+    expect(res.headers()['x-frame-options']).toBe('DENY');
+    expect(res.headers()['x-content-type-options']).toBe('nosniff');
+    expect((await request.get('/robots.txt')).status()).toBe(200);
+  });
+
+  test('los activos con hash se cachean un año', async ({ request }) => {
+    test.skip(local, 'cabeceras de vercel.json: solo desplegado en Vercel');
+    const html = await (await request.get('/')).text();
+    const src = html.match(/src="([^"]*_astro[^"]*)"/)?.[1];
+    expect(src, 'algún script /_astro en la portada').toBeTruthy();
+    expect((await request.get(src!)).headers()['cache-control']).toContain('immutable');
+  });
+
+  test('/api/latido no acepta visitas anónimas', async ({ request }) => {
+    test.skip(local, 'en local no hay CRON_SECRET ni VERCEL');
+    expect([401, 503]).toContain((await request.get('/api/latido')).status());
   });
 });

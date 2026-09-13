@@ -77,8 +77,9 @@ panel/portal cuando existan) — nunca se expone al navegador.
 
 1. vercel.com → Add New Project → importar `Diestorn03/GEMPRO-web`. Astro se detecta solo.
 2. Variables de entorno: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `ADMIN_PASSWORD`, `AUTH_SECRET`
-   (ver `.env.example`). Opcional: `CRON_SECRET` (Vercel la genera al guardarla) para que
-   `/api/latido` solo acepte la llamada firmada del cron y no cualquier visita anónima; y
+   y `CRON_SECRET` (Vercel la genera al guardarla; sin ella `/api/latido` responde 503 en vez de
+   aceptar cualquier visita anónima). Ver `.env.example`. Opcional: `CORREO_AVISOS` para desviar
+   los avisos del formulario a otro correo (por defecto van al de GEMPRO); y
    `GMAIL_USER` + `GMAIL_APP_PASSWORD` (una cuenta de Gmail dedicada, no hace falta Google
    Workspace) para que el formulario de contacto avise por correo — sin ellas, la consulta se
    sigue guardando en Supabase, pero nadie en GEMPRO se entera salvo que entre a mirar la base
@@ -100,7 +101,7 @@ Todo vive en este mismo proyecto como rutas renderizadas en el servidor (`export
 | `/evento` | Registro público por QR (nombre, correo, teléfono). Cerrado por defecto. |
 | `/api/salud` | Diagnóstico: qué variables llegaron, si la base responde y si existe la tabla del límite de intentos. Pide sesión de `/panel` o `?clave=` con el `AUTH_SECRET` (para poder diagnosticar incluso cuando `ADMIN_PASSWORD` es lo que falla). |
 
-Seguridad: contraseñas de clientes con hash y sal; cookies `HttpOnly`, `Secure` y `SameSite=Lax` con vencimiento firmado dentro del valor; comprobación de origen de Astro en todos los POST; límite de intentos por IP en `/api/entrar`, `/api/c/entrar`, `/api/evento` y `/api/contacto` (tabla `intentos_acceso`, ver `supabase/fase5-limite.sql`); cabeceras de seguridad y `Cache-Control: no-store` en las rutas privadas (`src/middleware.ts`); RLS activo y la `service_role` key solo en el servidor.
+Seguridad: contraseñas de clientes con hash y sal; cookies `HttpOnly`, `Secure` y `SameSite=Lax` con vencimiento firmado dentro del valor (la firma del panel incluye `ADMIN_PASSWORD`: cambiarla cierra todas las sesiones); comprobación de origen de Astro en todos los POST; límite de intentos por IP en `/api/entrar`, `/api/c/entrar`, `/api/evento` y `/api/contacto` (tabla `intentos_acceso`, ver `supabase/fase5-limite.sql`); `Cache-Control: no-store` en las rutas privadas (`src/middleware.ts`); cabeceras de seguridad, Content-Security-Policy y caché inmutable de `/_astro` para TODO el sitio (estático y servidor) en `vercel.json` — si se cambia un `<script is:inline>`, hay que recalcular su hash con `node scripts/csp-hashes.mjs`; RLS activo y la `service_role` key solo en el servidor.
 
 Migraciones: `supabase/schema.sql` es la forma final para un proyecto nuevo; un proyecto existente ejecuta en orden `fase5-limite.sql`, `fase6-clientes-eventos.sql`, `fase7-limite-informes.sql` y `fase8-limite-noticias.sql` (`/api/salud` dice cuáles faltan).
 

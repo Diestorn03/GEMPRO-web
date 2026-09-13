@@ -6,6 +6,7 @@ import { cifrar } from '../../../lib/cifrado';
 import { sb, nuevoToken, nuevaSal } from '../../../lib/supabase';
 
 const MIN_CLAVE = 8;
+const UUID = /^[0-9a-f-]{36}$/;
 
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   if (!estaAutenticado(cookies)) return redirect('/entrar', 303);
@@ -15,7 +16,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const password = String(form.get('password') ?? '');
 
   if (accion === 'eliminar') {
-    if (id) {
+    if (UUID.test(id)) {
       // Borrar primero los archivos del cliente en Storage: la fila de la tabla se borra en
       // cascada, pero eso no toca el bucket — sin esto, los informes quedan huérfanos.
       const { data: archivos } = await sb().storage.from('informes-tecnicos').list(id, { limit: 1000 });
@@ -26,7 +27,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   }
 
   if (accion === 'clave') {
-    if (!id) return redirect('/panel', 303);
+    if (!UUID.test(id)) return redirect('/panel', 303);
     if (password.length < MIN_CLAVE) return redirect(`/panel/${id}?error=clave`, 303);
     const sal = nuevaSal();
     const { error } = await sb().from('clientes').update({ password_sal: sal, password_hash: hashContrasena(password, sal), password_cifrada: cifrar(password) }).eq('id', id);

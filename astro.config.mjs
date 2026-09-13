@@ -32,5 +32,9 @@ export default defineConfig({
   },
   vite: {
     plugins: [tailwindcss()],
+    // 0 = ningun <script> de componente se incrusta en el HTML (Astro incrusta los menores de 4 KB).
+    // Asi la CSP de vercel.json solo necesita los hashes de los dos <script is:inline> escritos a mano;
+    // scripts/csp-hashes.mjs lo comprueba tras cada build.
+    build: { assetsInlineLimit: 0 },
   },
 });

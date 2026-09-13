@@ -27,13 +27,11 @@ export const POST: APIRoute = async (ctx) => {
   const ip = ipDe(ctx);
   if (await bloqueado(ip, 'evento', 120, 60)) return json({ ok: false, error: 'Demasiados registros desde esta conexión. Intente más tarde.' }, 429);
 
-  const { data: eventos, error: sinTabla } = await sb().from('eventos').select('id, inicio, fin, forzar_abierto').order('creado_en', { ascending: false });
-  let evento: { id?: string; inicio: string | null; fin: string | null; forzar_abierto: boolean | null } | null = eventoActual(eventos ?? []);
-  // ponytail: transición hasta ejecutar supabase/fase6 — sin la tabla eventos, vale la configuración vieja.
-  if (sinTabla) evento = (await sb().from('evento_config').select('*').eq('id', true).maybeSingle()).data;
+  const { data: eventos } = await sb().from('eventos').select('id, inicio, fin, forzar_abierto').order('creado_en', { ascending: false });
+  const evento = eventoActual(eventos ?? []);
   if (!evento || !eventoAbierto(evento)) return json({ ok: false, error: 'El registro para el evento no está disponible en este momento.' }, 403);
 
-  const { error } = await sb().from('registro_evento').insert({ nombre, correo, telefono: telefono || null, ...(evento.id ? { evento_id: evento.id } : {}) });
+  const { error } = await sb().from('registro_evento').insert({ nombre, correo, telefono: telefono || null, evento_id: evento.id });
   if (error) { console.error('[evento] no se pudo registrar', error); return json({ ok: false, error: 'No pudimos registrar su participación. Intente de nuevo.' }, 500); }
   await registrarIntento(ip, 'evento');
   return json({ ok: true });

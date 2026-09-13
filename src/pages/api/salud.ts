@@ -3,20 +3,23 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sb } from '../../lib/supabase';
 import { descifrar } from '../../lib/cifrado';
-import { estaAutenticado } from '../../lib/auth';
+import { estaAutenticado, igual } from '../../lib/auth';
 
 /**
  * Chequeo de configuración en producción. NO expone valores, solo si cada variable llegó al
  * servidor — sirve para distinguir "la contraseña que escribí no es la configurada" de
  * "la variable no está configurada", sin entrar al panel de Vercel.
  *
- * Acceso: con sesión de /panel ya abierta, o con ?clave=AUTH_SECRET (para diagnosticar
- * justo cuando ADMIN_PASSWORD no deja entrar, que es cuando más hace falta este endpoint).
+ * Acceso: con sesión de /panel ya abierta, o con AUTH_SECRET en `Authorization: Bearer` (curl) o
+ * en ?clave= (desde el navegador, para diagnosticar justo cuando ADMIN_PASSWORD no deja entrar).
+ * Riesgo aceptado: la variante ?clave= deja el secreto en la URL (logs de Vercel, historial);
+ * preferir la cabecera cuando se pueda.
  */
-export const GET: APIRoute = async ({ cookies, url }) => {
+export const GET: APIRoute = async ({ cookies, url, request }) => {
   const v = (k: string) => (import.meta.env as Record<string, string | undefined>)[k] || process.env[k] || '';
   const autSecret = v('AUTH_SECRET').trim();
-  if (!estaAutenticado(cookies) && (!autSecret || url.searchParams.get('clave') !== autSecret)) {
+  const claveAcceso = url.searchParams.get('clave') ?? request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? '';
+  if (!estaAutenticado(cookies) && (!autSecret || !igual(claveAcceso, autSecret))) {
     return new Response('No autorizado', { status: 401 });
   }
   // Consulta real a la base (solo cuenta filas): distingue "variable puesta" de "conexión que funciona".

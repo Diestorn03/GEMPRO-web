@@ -10,6 +10,7 @@ import type { APIRoute } from 'astro';
 import { sb } from '../../lib/supabase';
 import { bloqueado, ipDe, registrarIntento } from '../../lib/limite';
 import { avisarConsultaPorCorreo } from '../../lib/correo';
+import { site } from '../../data/site';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
@@ -18,8 +19,6 @@ const clean = (v: unknown, max = 500) => String(v ?? '').trim().slice(0, max);
 
 export const POST: APIRoute = async (ctx) => {
   const { request } = ctx;
-  const ip = ipDe(ctx);
-  if (await bloqueado(ip, 'contacto', 10, 60)) return json({ ok: false, error: 'Demasiados mensajes desde esta conexión. Intente más tarde o escríbanos por WhatsApp.' }, 429);
   let data: Record<string, unknown> = {};
   const type = request.headers.get('content-type') || '';
   try {
@@ -44,6 +43,11 @@ export const POST: APIRoute = async (ctx) => {
   if (mensaje.length < 10) errores.mensaje = 'Cuéntenos el equipo y el síntoma (mínimo 10 caracteres).';
   if (Object.keys(errores).length) return json({ ok: false, errores }, 422);
 
+  // Validar ANTES de consultar la base (igual que /api/evento): un envío inválido no cuesta consultas
+  // y, si la base está caída, responde 422 y no 500.
+  const ip = ipDe(ctx);
+  if (await bloqueado(ip, 'contacto', 10, 60)) return json({ ok: false, error: 'Demasiados mensajes desde esta conexión. Intente más tarde o escríbanos por WhatsApp.' }, 429);
+
   try {
     const { error } = await sb().from('mensajes').insert({ nombre, empresa: empresa || null, correo, telefono: telefono || null, mensaje });
     if (error) throw error;
@@ -57,11 +61,10 @@ export const POST: APIRoute = async (ctx) => {
   // (no uno detrás del otro) porque no dependen entre sí, pero la parte lenta de verdad es el
   // propio envío por Gmail (1-3 s de apretón de manos SMTP) — eso no se evita desde aquí, ver el
   // comentario al inicio de src/lib/correo.ts.
-  // ponytail: mientras se prueba, los avisos van al correo de Diego, no al de GEMPRO (site.email).
-  // Volver a `site.email` antes de darlo por listo para producción.
+  // Destino del aviso: CORREO_AVISOS si está definida (p. ej. un correo de pruebas), si no el de GEMPRO.
   await Promise.all([
     registrarIntento(ip, 'contacto'),
-    avisarConsultaPorCorreo('cardozodiego512@gmail.com', { nombre, empresa, correo, telefono, mensaje }),
+    avisarConsultaPorCorreo(process.env.CORREO_AVISOS?.trim() || site.email, { nombre, empresa, correo, telefono, mensaje }),
   ]);
 
   return json({ ok: true, mensaje: 'Recibido. Un ingeniero le responderá con una propuesta de medición.' });
