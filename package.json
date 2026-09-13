@@ -10,7 +10,9 @@
     "capturas": "node scripts/capturas.mjs",
     "check": "astro check",
     "test": "playwright test",
-    "test:report": "playwright show-report"
+    "test:report": "playwright show-report",
+    "test:panel": "playwright test -c playwright.panel.config.ts",
+    "dev:pruebas": "node scripts/servidor-pruebas.mjs"
   },
   "dependencies": {
     "@astrojs/vercel": "^11.0.10",

@@ -11,3 +11,4 @@ server.log
 .vercel/
 .qr-prueba/
 .vercel
+playwright-report-panel/

@@ -10,6 +10,7 @@ const baseURL = process.env.BASE_URL || 'http://127.0.0.1:4321';
 
 export default defineConfig({
   testDir: './tests',
+  testIgnore: '**/panel/**', // la suite del panel (datos reales) tiene su propia configuración: playwright.panel.config.ts
   timeout: 60_000,
   expect: { timeout: 10_000 },
   fullyParallel: true,
