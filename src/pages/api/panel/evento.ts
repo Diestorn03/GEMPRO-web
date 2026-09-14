@@ -36,6 +36,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   };
 
   if (accion === 'crear') {
+    // Sin tope de "no en el pasado" aquí: el calendario del panel ya no deja elegirlo (Roni), y la
+    // suite de pruebas usa fechas pasadas a propósito para sembrar un evento ya activo sin esperar.
     if (!nombre || !inicio || !fin || fin <= inicio) return volver('error=1');
     const ocupado = await choque({ inicio, fin });
     if (ocupado) return ocupado;

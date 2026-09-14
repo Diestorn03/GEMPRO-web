@@ -14,7 +14,7 @@ async function sinEventos() {
 test.beforeEach(async ({ request }) => { await sinEventos(); await entrarOk(request); });
 test.afterAll(async () => { await sinEventos(); await limpiarTodo(); });
 
-const registrar = (request: APIRequestContext, datos: Record<string, unknown>) => request.post('/api/evento', { data: { nombre: nombrePrueba('Persona'), empresa: 'Planta Norte', cargo: 'Mecánico', correo: 'p@x.com', ...datos } });
+const registrar = (request: APIRequestContext, datos: Record<string, unknown>) => request.post('/api/evento', { data: { nombre: nombrePrueba('Persona'), empresa: 'Planta Norte', cargo: 'Mecánico', correo: 'p@x.com', telefono: '0414 000 0000', ...datos } });
 const eventoDe = async (nombre: string) => (await sb().from('eventos').select('*').eq('nombre', nombre).maybeSingle()).data!;
 const ACTIVO = () => ({ inicio: local(-1), fin: local(2) });
 
@@ -278,7 +278,9 @@ test.describe('Registro público por QR', () => {
     ['sin cargo', { cargo: '' }, ['cargo']],
     ['correo sin dominio', { correo: 'ana@' }, ['correo']],
     ['correo sin arroba', { correo: 'ana.com' }, ['correo']],
-    ['todo vacío', { nombre: '', empresa: '', cargo: '', correo: '' }, ['nombre', 'empresa', 'cargo', 'correo']],
+    ['sin teléfono', { telefono: '' }, ['telefono']],
+    ['teléfono de 3 dígitos', { telefono: '041' }, ['telefono']],
+    ['todo vacío', { nombre: '', empresa: '', cargo: '', correo: '', telefono: '' }, ['nombre', 'empresa', 'cargo', 'correo', 'telefono']],
   ];
   for (const [nombre, datos, errores] of CASOS) {
     test(`rechaza ${nombre} con 422`, async ({ request }) => {
@@ -296,10 +298,10 @@ test.describe('Registro público por QR', () => {
   test('cuerpo que no es JSON → 400', async ({ request }) => {
     expect((await request.post('/api/evento', { data: Buffer.from('nombre=x'), headers: { 'content-type': 'application/json' } })).status()).toBe(400);
   });
-  test('teléfono vacío se guarda como null; campos largos se recortan', async ({ request }) => {
-    await registrar(request, { telefono: '', nombre: 'PRUEBA-' + 'n'.repeat(300), empresa: 'e'.repeat(300), cargo: 'c'.repeat(300) });
+  test('campos largos se recortan', async ({ request }) => {
+    await registrar(request, { nombre: 'PRUEBA-' + 'n'.repeat(300), empresa: 'e'.repeat(300), cargo: 'c'.repeat(300), telefono: '0'.repeat(300) });
     const { data } = await sb().from('registro_evento').select('telefono, nombre, empresa, cargo').maybeSingle();
-    expect(data?.telefono).toBeNull();
+    expect(data?.telefono?.length).toBe(40);
     expect(data?.nombre.length).toBe(120);
     expect(data?.empresa.length).toBe(120);
     expect(data?.cargo.length).toBe(80);

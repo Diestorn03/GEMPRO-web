@@ -355,6 +355,17 @@ const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[
         valor.textContent = `${dd(estado.dia)} ${MESES[estado.mes - 1]} ${estado.anio} · ${dd(estado.hora)}:${dd(estado.min)}`;
       };
 
+      // Roni: "que no se pueda programar una hora o dia que ya paso" — ningún calendario del panel
+      // deja elegir el pasado; el día de hoy sí, pero con las horas ya corridas fuera de alcance.
+      const esHoy = () => estado.anio === hoy.getFullYear() && estado.mes === hoy.getMonth() + 1 && estado.dia === hoy.getDate();
+      const limitarHora = () => {
+        const horaMin = esHoy() ? hoy.getHours() : 0;
+        Array.from(selHora.options).forEach((o) => { o.disabled = Number(o.value) < horaMin; });
+        if (estado.hora < horaMin) { estado.hora = horaMin; selHora.value = dd(horaMin); }
+        const minMin = esHoy() && estado.hora === hoy.getHours() ? hoy.getMinutes() : 0;
+        Array.from(selMin.options).forEach((o) => { o.disabled = Number(o.value) < minMin; });
+        if (estado.min < minMin) { estado.min = minMin; selMin.value = dd(minMin); }
+      };
       const pintarDias = () => {
         tituloMes.textContent = `${MESES_LARGO[vista.mes - 1]} ${vista.anio}`;
         dias.innerHTML = '';
@@ -362,6 +373,7 @@ const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[
         for (let i = 0; i < huecos; i++) dias.append(el('span', 'fecha-dia vacio'));
         const total = diasEnMes(vista.mes, vista.anio);
         for (let d = 1; d <= total; d++) {
+          const pasado = vista.anio < hoy.getFullYear() || (vista.anio === hoy.getFullYear() && (vista.mes < hoy.getMonth() + 1 || (vista.mes === hoy.getMonth() + 1 && d < hoy.getDate())));
           const b = el('button', 'fecha-dia', String(d));
           b.type = 'button';
           if (vista.anio === hoy.getFullYear() && vista.mes === hoy.getMonth() + 1 && d === hoy.getDate()) b.classList.add('es-hoy');
@@ -369,15 +381,21 @@ const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[
             b.classList.add('elegido');
             b.setAttribute('aria-current', 'date');
           }
-          b.addEventListener('click', () => {
-            estado.anio = vista.anio; estado.mes = vista.mes; estado.dia = d;
-            // Marcar en sitio, sin redibujar la grilla: si se redibuja, el botón tocado queda fuera
-            // del DOM y el detector de "clic afuera" (abajo) cerraría el panel en cada toque.
-            dias.querySelectorAll('.fecha-dia.elegido').forEach((x) => { x.classList.remove('elegido'); x.removeAttribute('aria-current'); });
-            b.classList.add('elegido');
-            b.setAttribute('aria-current', 'date');
-            escribir();
-          });
+          if (pasado) {
+            b.disabled = true;
+            b.classList.add('pasado');
+          } else {
+            b.addEventListener('click', () => {
+              estado.anio = vista.anio; estado.mes = vista.mes; estado.dia = d;
+              // Marcar en sitio, sin redibujar la grilla: si se redibuja, el botón tocado queda fuera
+              // del DOM y el detector de "clic afuera" (abajo) cerraría el panel en cada toque.
+              dias.querySelectorAll('.fecha-dia.elegido').forEach((x) => { x.classList.remove('elegido'); x.removeAttribute('aria-current'); });
+              b.classList.add('elegido');
+              b.setAttribute('aria-current', 'date');
+              limitarHora();
+              escribir();
+            });
+          }
           dias.append(b);
         }
       };
@@ -391,7 +409,7 @@ const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[
       };
       anterior.addEventListener('click', () => moverMes(-1));
       siguiente.addEventListener('click', () => moverMes(1));
-      selHora.addEventListener('change', () => { estado.hora = Number(selHora.value); escribir(); });
+      selHora.addEventListener('change', () => { estado.hora = Number(selHora.value); limitarHora(); escribir(); });
       selMin.addEventListener('change', () => { estado.min = Number(selMin.value); escribir(); });
 
       const abrir = () => {
@@ -414,6 +432,9 @@ const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) { cerrar(); boton.focus(); } });
 
       instancias.set(input, { estado, escribir, boton, raiz });
+      // Bloqueado (la apertura de un evento en curso) conserva su hora real, aunque ya haya pasado:
+      // no es una fecha por programar, es historia. limitarHora() es solo para lo que se va a elegir.
+      if (!bloqueado) limitarHora();
       escribir(); // deja el input sincronizado desde ya, así "required" nunca lo bloquea por vacío
     });
 

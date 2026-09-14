@@ -44,8 +44,8 @@ const abierto = Boolean(clasificar(eventos ?? []).enCurso);
               <input id="ev-correo" name="correo" type="email" required autocomplete="email" class="field" placeholder="nombre@correo.com" />
             </div>
             <div>
-              <label for="ev-telefono" class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Teléfono (opcional)</label>
-              <input id="ev-telefono" name="telefono" type="tel" autocomplete="tel" class="field" placeholder="+58" />
+              <label for="ev-telefono" class="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em] text-fog">Teléfono</label>
+              <input id="ev-telefono" name="telefono" type="tel" required minlength="4" autocomplete="tel" class="field" placeholder="+58" />
             </div>
             <div class="absolute -left-[9999px]" aria-hidden="true"><label>No rellenar <input type="text" name="empresa_web" tabindex="-1" autocomplete="off" /></label></div>
             <p class="error-evento hidden rounded border border-amber/40 bg-amber/10 px-3 py-2 text-[13px] text-amber" role="alert"></p>

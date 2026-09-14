@@ -26,6 +26,7 @@ export const POST: APIRoute = async (ctx) => {
   if (empresa.length < 2) errores.empresa = 'Indique su empresa.';
   if (cargo.length < 2) errores.cargo = 'Indique su cargo.';
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(correo)) errores.correo = 'Indique un correo válido.';
+  if (telefono.length < 4) errores.telefono = 'Indique su teléfono.';
   if (Object.keys(errores).length) return json({ ok: false, errores }, 422);
 
   const ip = ipDe(ctx);
@@ -35,7 +36,7 @@ export const POST: APIRoute = async (ctx) => {
   const evento = clasificar(eventos ?? []).enCurso;
   if (!evento) return json({ ok: false, error: 'El registro para el evento no está disponible en este momento.' }, 403);
 
-  const { error } = await sb().from('registro_evento').insert({ nombre, empresa, cargo, correo, telefono: telefono || null, evento_id: evento.id });
+  const { error } = await sb().from('registro_evento').insert({ nombre, empresa, cargo, correo, telefono, evento_id: evento.id });
   if (error) { console.error('[evento] no se pudo registrar', /empresa|cargo/.test(error.message) ? 'falta ejecutar supabase/fase10-registro-empresa-cargo.sql' : error); return json({ ok: false, error: 'No pudimos registrar su participación. Intente de nuevo.' }, 500); }
   await registrarIntento(ip, 'evento');
   return json({ ok: true });
