@@ -4,30 +4,51 @@ import { fechaVE } from '../../lib/fechas';
 import PanelBase from '../../layouts/PanelBase.astro';
 import { clienteAutenticado } from '../../lib/auth';
 import { sb } from '../../lib/supabase';
+import { site } from '../../data/site';
 import fotoFondo from '../../assets/img/hero-slide-4.jpg';
 
 export const prerender = false;
 
 const { token } = Astro.params;
 const { data: cliente } = await sb().from('clientes').select('*').eq('token', token).maybeSingle();
-if (!cliente) return new Response('No encontrado', { status: 404 });
+// Antes: new Response('No encontrado', 404) en texto plano, sin marca ni forma de volver. Un link
+// de cliente vencido o mal copiado ahora cae en el mismo tratamiento visual que el resto del portal.
+if (!cliente) Astro.response.status = 404;
 
-const autenticado = clienteAutenticado(Astro.cookies, cliente.id, cliente.password_sal);
+const autenticado = cliente ? clienteAutenticado(Astro.cookies, cliente.id, cliente.password_sal) : false;
 const error = Astro.url.searchParams.get('error');
 const mensajeError = error === '2' ? 'Demasiados intentos. Espere 15 minutos e intente de nuevo.' : error ? 'Contraseña incorrecta.' : '';
 const fecha = fechaVE;
 
 let informes: { id: string; nombre_archivo: string; url: string; subido_en: string }[] = [];
-if (autenticado) {
+if (autenticado && cliente) {
   const { data } = await sb().from('informes').select('*').eq('cliente_id', cliente.id).order('subido_en', { ascending: false });
   // Una sola llamada a Storage firma todas las URL (antes era una por informe, en serie de red).
   const { data: firmadas } = data?.length ? await sb().storage.from('informes-tecnicos').createSignedUrls(data.map((i) => i.ruta_storage), 300) : { data: [] as { signedUrl: string }[] };
   informes = (data ?? []).map((inf, i) => ({ id: inf.id, nombre_archivo: inf.nombre_archivo, url: firmadas?.[i]?.signedUrl ?? '', subido_en: inf.subido_en }));
 }
 ---
-<PanelBase title={cliente.nombre_empresa}>
+<PanelBase title={cliente ? cliente.nombre_empresa : 'Enlace no encontrado'}>
   <nav slot="nav"></nav>
-  {!autenticado ? (
+  {!cliente ? (
+    <section class="relative -mx-5 -my-10 isolate sm:-mx-8 lg:-mx-[72px] overflow-hidden lg:-my-14" data-parallax-scope>
+      <div class="absolute inset-0 -z-20" data-parallax="10">
+        <Image src={fotoFondo} alt="" widths={[768, 1280, 1920]} sizes="100vw" class="h-full w-full object-cover" loading="eager" />
+      </div>
+      <div class="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(6,20,38,.97)_0%,rgba(6,20,38,.88)_45%,rgba(6,20,38,.6)_100%)]" aria-hidden="true"></div>
+      <div class="container-x flex min-h-[calc(100dvh-73px)] items-center py-16">
+        <div class="w-full max-w-md rounded-md border border-white/15 bg-white/[0.06] p-8 backdrop-blur-xl lg:p-10">
+          <span class="eyebrow">GEMPRO</span>
+          <h1 class="display mt-3 text-[clamp(26px,4vw,34px)] text-white" data-split>Este enlace no es válido</h1>
+          <p class="mt-2 text-[14px] text-fog">El link de su portal puede estar vencido o mal copiado. Escríbanos y le confirmamos el correcto.</p>
+          <div class="mt-6 flex flex-wrap gap-3">
+            <a href="/" class="btn-primary">Ir al sitio de GEMPRO</a>
+            <a href={`https://wa.me/${site.whatsapp}`} target="_blank" rel="noopener" class="btn-ghost border border-white/15">WhatsApp {site.whatsappDisplay}</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  ) : !autenticado ? (
     <section class="relative -mx-5 -my-10 isolate sm:-mx-8 lg:-mx-[72px] overflow-hidden lg:-my-14" data-parallax-scope>
       <div class="absolute inset-0 -z-20" data-parallax="10">
         <Image src={fotoFondo} alt="" widths={[768, 1280, 1920]} sizes="100vw" class="h-full w-full object-cover" loading="eager" />

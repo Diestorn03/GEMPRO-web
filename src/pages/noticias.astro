@@ -34,7 +34,7 @@ const extracto = (texto: string) => (texto.length > 160 ? texto.slice(0, 160).tr
           <a href={`/noticias/${n.id}`} class="group flex flex-col overflow-hidden rounded-md border border-white/10 bg-panel transition-[border-color,transform] duration-500 hover:-translate-y-1.5 hover:border-neon/50">
             {n.imagen_url && (
               <div class="h-[180px] overflow-hidden">
-                <img src={n.imagen_url} alt="" class="h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-105" loading="lazy" />
+                <Image src={n.imagen_url} inferSize width={640} alt="" class="h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-105" loading="lazy" />
               </div>
             )}
             <div class="flex flex-1 flex-col gap-3 p-6">

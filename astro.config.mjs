@@ -13,6 +13,12 @@ export default defineConfig({
   site: 'https://gempro.com.ve',
   output: 'static',
   adapter: vercel(),
+  // Fotos de noticias y logos de cliente: se suben a Supabase Storage y se sirven por URL
+  // remota. Sin esto, <Image> las rechaza por venir de fuera del sitio; con esto pasan por la
+  // misma compresión a WebP/AVIF que ya usan las fotos locales (astro.config no admite comodín
+  // de subdominio salvo con este wildcard: cualquier proyecto *.supabase.co, igual que en la CSP
+  // de vercel.json).
+  image: { remotePatterns: [{ protocol: 'https', hostname: '**.supabase.co' }] },
   // URLs del sitio anterior (indexadas por Google): sin esto cada una devuelve 404 y se
   // pierde el posicionamiento acumulado. Incluye las variantes /phone/ del sitio viejo.
   redirects: {

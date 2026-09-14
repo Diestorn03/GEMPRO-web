@@ -1,0 +1,21 @@
+---
+// Astro sirve este archivo para cualquier ruta que no exista. Antes no existía: quien seguía un
+// enlace viejo o escribía mal la dirección veía la pantalla genérica de Astro, con SU logo, no
+// el de GEMPRO, y sin manera de volver.
+import Base from '../layouts/Base.astro';
+import { site } from '../data/site';
+---
+<Base title="Página no encontrada" transparentNav={false}>
+  <section class="container-x flex min-h-[70dvh] flex-col items-start justify-center gap-5 py-20">
+    <span class="eyebrow">404</span>
+    <h1 class="display text-[clamp(32px,6vw,64px)] text-white" data-split>Esta página no existe.</h1>
+    <p class="max-w-[560px] text-[16px] leading-relaxed text-fog">
+      El enlace puede estar viejo o mal escrito. Si venía de un buscador, la página que buscaba pudo mudarse; si prefiere, escríbanos y lo ayudamos directo.
+    </p>
+    <div class="mt-2 flex flex-wrap gap-3">
+      <a href="/" class="btn-primary">Volver al inicio</a>
+      <a href="/servicios" class="btn-ghost border border-white/15">Ver servicios</a>
+      <a href={`https://wa.me/${site.whatsapp}`} target="_blank" rel="noopener" class="btn-ghost border border-white/15">WhatsApp {site.whatsappDisplay}</a>
+    </div>
+  </section>
+</Base>
