@@ -16,12 +16,11 @@ export interface Evento extends EventoConfig {
  * conserva (true abre, false cierra). Sin fechas: cerrado, para que nunca quede un registro abierto
  * por accidente.
  */
-export function eventoAbierto(config: EventoConfig | null | undefined): boolean {
+export function eventoAbierto(config: EventoConfig | null | undefined, ahora = Date.now()): boolean {
   if (!config) return false;
   if (config.forzar_abierto === true) return true;
   if (config.forzar_abierto === false) return false;
   if (!config.inicio && !config.fin) return false;
-  const ahora = Date.now();
   if (config.inicio && ahora < new Date(config.inicio).getTime()) return false;
   if (config.fin && ahora >= new Date(config.fin).getTime()) return false; // a la hora de cierre ya está cerrado
   return true;
@@ -37,7 +36,7 @@ export function esFuturo(e: EventoConfig, ahora = Date.now()): boolean {
  *  reciente al más viejo). Un evento cerrado nunca vuelve a la tarjeta principal: va al historial.
  *  `eventos` viene ordenado por creado_en descendente. */
 export function clasificar<T extends EventoConfig>(eventos: T[], ahora = Date.now()) {
-  const enCurso = eventos.find((e) => eventoAbierto(e)) ?? null;
+  const enCurso = eventos.find((e) => eventoAbierto(e, ahora)) ?? null;
   const resto = eventos.filter((e) => e !== enCurso);
   const programados = resto
     .filter((e) => esFuturo(e, ahora) && e.forzar_abierto !== false)

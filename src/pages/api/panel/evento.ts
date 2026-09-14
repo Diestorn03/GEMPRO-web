@@ -2,7 +2,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { estaAutenticado } from '../../../lib/auth';
-import { aIso, chocaCon, type Evento } from '../../../lib/evento';
+import { aIso, chocaCon, eventoAbierto, type Evento } from '../../../lib/evento';
 import { sb } from '../../../lib/supabase';
 
 const UUID = /^[0-9a-f-]{36}$/;
@@ -81,7 +81,10 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   // guardar: nombre y fechas. Escrito pero inválido (30 de febrero, formato raro) no se guarda en silencio.
   if ((inicioRaw && !inicio) || (finRaw && !fin)) return volver('error=1');
   // Evento en curso: la apertura ya ocurrió y no se toca (el campo va bloqueado); solo se mueve el cierre.
-  const enCurso = ms(evento.inicio) <= Date.now() && Date.now() < ms(evento.fin);
+  // eventoAbierto(), no una comparación de fechas propia: así queda igual al criterio que decide en
+  // el panel si el campo se pinta bloqueado, e incluye forzar_abierto (una fila vieja forzada, sin
+  // fechas, no se queda sin apertura "real" que inventar).
+  const enCurso = eventoAbierto(evento);
   // Campo vacío = conservar la fecha que tenía (la auditoría encontró que devolvía error).
   const nuevoInicio = enCurso ? evento.inicio : (inicio ?? evento.inicio);
   const nuevoFin = fin ?? evento.fin;

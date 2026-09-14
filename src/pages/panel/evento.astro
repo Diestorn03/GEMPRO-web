@@ -27,7 +27,9 @@ const registrosDe = (e: Evento) => conteo[e.id] ?? 0;
 const { enCurso, programados, anteriores } = clasificar(eventos);
 const proximo = enCurso ? null : (programados[0] ?? null);
 const enEspera = enCurso ? programados : programados.slice(1);
-const abiertos = eventos.filter(eventoAbierto);
+// (e) => eventoAbierto(e), no el atajo eventos.filter(eventoAbierto): .filter también pasa el
+// índice como segundo argumento, y eventoAbierto ahora acepta un segundo argumento "ahora".
+const abiertos = eventos.filter((e) => eventoAbierto(e));
 const rango = (e: Evento) => (e.inicio && e.fin ? `${fechaHoraVE(e.inicio)} → ${fechaHoraVE(e.fin)}` : 'sin fechas');
 
 const p = Astro.url.searchParams;
@@ -434,8 +436,15 @@ const botonQr = 'btn-ghost border border-white/15 px-3 py-2.5 text-center text-[
       instancias.set(input, { estado, escribir, boton, raiz });
       // Bloqueado (la apertura de un evento en curso) conserva su hora real, aunque ya haya pasado:
       // no es una fecha por programar, es historia. limitarHora() es solo para lo que se va a elegir.
-      if (!bloqueado) limitarHora();
-      escribir(); // deja el input sincronizado desde ya, así "required" nunca lo bloquea por vacío
+      if (bloqueado) {
+        // Si esa hora real no existe (fila vieja forzada abierta, sin fechas), no se inventa una:
+        // el campo se queda vacío tal como llegó, para que guardar cualquier otro cambio del
+        // formulario (p. ej. el nombre) no grabe de paso una apertura fabricada.
+        if (v) escribir(); else valor.textContent = 'Sin fecha registrada';
+      } else {
+        limitarHora();
+        escribir(); // deja el input sincronizado desde ya, así "required" nunca lo bloquea por vacío
+      }
     });
 
     // --- Reglas entre "Abre" y "Cierra" del mismo formulario ---
