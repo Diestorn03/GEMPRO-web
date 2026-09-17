@@ -46,7 +46,6 @@ src/
   lib/supabase.ts       ← cliente de Supabase para el servidor (service_role, nunca al navegador)
   lib/auth.ts           ← sesión del panel privado y verificación de contraseña de cliente
   scripts/motion.ts     ← animaciones por atributos data-*
-  scripts/generar-logo-blanco.mjs ← regenera el logo para fondo oscuro desde el logo maestro
   styles/global.css     ← tokens de color, tipografía y utilidades
   assets/img, logos     ← fotos y logos originales (Astro genera los formatos optimizados)
 supabase/schema.sql     ← tablas y bucket a ejecutar en un proyecto nuevo de Supabase

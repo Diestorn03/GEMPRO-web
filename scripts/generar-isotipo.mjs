@@ -1,11 +1,11 @@
 /**
- * Recorta el isotipo (símbolo sin el texto "GEMPRO") del logo maestro a color de la carpeta
- * de identidad y lo guarda en src/assets/logos/isotipo-gempro.png. Se usa al centro del QR.
- * Uso puntual: node scripts/generar-isotipo.mjs
+ * Recorta el isotipo (símbolo sin el texto "GEMPRO") del logo maestro a color y lo guarda en
+ * src/assets/logos/isotipo-gempro.png. Se usa al centro del QR y como base del favicon.
+ * Volver a correr si se reemplaza el logo maestro: node scripts/generar-isotipo.mjs
  */
 import sharp from 'sharp';
 
-const SRC = 'C:/Users/Diestorn/Desktop/identidad GemPro/LOGO PNG/GEMPRO PNG_Mesa de trabajo 1.png';
+const SRC = 'src/assets/logos/logo-gempro.png';
 const OUT = 'src/assets/logos/isotipo-gempro.png';
 
 const { data, info } = await sharp(SRC).trim().ensureAlpha().raw().toBuffer({ resolveWithObject: true });
