@@ -37,9 +37,10 @@ export const site = {
   whatsappDisplay: '+58 414-616 4928',
   phone: '+58 414-6164928',
   email: 'keith.quilarquez@gempro.com.ve',
+  horario: 'Atención 24 horas, los 7 días',
   address: 'Urb. Urdaneta, Av. principal con calle 9, Edif. GEMPRO PB No. 105-A, Maracaibo, Edo. Zulia, Venezuela',
   addressShort: 'Urb. Urdaneta, Av. principal con calle 9, Edif. GEMPRO, Maracaibo',
-  rif: '[J-XXXXXXXX-X]',
+  rif: 'J-30448574-3',
   social: {
     facebook: 'https://www.facebook.com/Gempro.Company/',
     instagram: 'https://www.instagram.com/gempro.company/',
@@ -130,11 +131,12 @@ export const brands = [
 export const training = {
   title: 'Formamos a los analistas de su planta.',
   text: 'Cursos cortos bajo normas ISO y ASNT con prácticas sobre equipos reales. En Maracaibo o en sus instalaciones.',
+  // Diego (17 sep 2026): los cuatro cursos todavía no tienen fecha prevista.
   courses: [
-    { code: 'VIB-I', name: 'Análisis de vibraciones · Nivel I', date: '[FECHA]' },
-    { code: 'TER-I', name: 'Termografía infrarroja · Nivel I', date: '[FECHA]' },
-    { code: 'TRI', name: 'Tribología y análisis de aceites', date: '[FECHA]' },
-    { code: 'ALB', name: 'Alineación y balanceo de precisión', date: '[FECHA]' },
+    { code: 'VIB-I', name: 'Análisis de vibraciones · Nivel I', date: 'Fecha a confirmar' },
+    { code: 'TER-I', name: 'Termografía infrarroja · Nivel I', date: 'Fecha a confirmar' },
+    { code: 'TRI', name: 'Tribología y análisis de aceites', date: 'Fecha a confirmar' },
+    { code: 'ALB', name: 'Alineación y balanceo de precisión', date: 'Fecha a confirmar' },
   ],
 };
 
