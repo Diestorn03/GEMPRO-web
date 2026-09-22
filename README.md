@@ -78,14 +78,14 @@ panel/portal cuando existan) — nunca se expone al navegador.
 
 ## Dónde vive en producción (desde el 21 sep 2026)
 
-- **Vercel**: equipo "GEMPRO" (plan Pro), cuenta Google gemprovenezuela@gmail.com, proyecto . Cada  a  de  publica solo. Región de funciones: São Paulo (gru1). Cron diario .
-- **Supabase**: organización "gemprovenezuela@gmail.com's" (plan Pro), proyecto  en São Paulo (sa-east-1). Es el mismo proyecto de siempre: la migración de cuentas se hizo por transferencia, sin cambiar URL ni claves.
-- **Dominio**:  (producción) y  (redirección 308 al apex). El DNS sigue en el cPanel de Interideas (), que también aloja el correo: solo los registros A de  y  apuntan a Vercel (216.150.1.1); MX, SPF, DKIM y subdominios de correo no se tocan.  sigue activo (el QR impreso apunta ahí).
+- **Vercel**: equipo "GEMPRO" (plan Pro), cuenta Google gemprovenezuela@gmail.com, proyecto `gempro-web`. Cada `git push` a `main` de `Diestorn03/GEMPRO-web` publica solo. Región de funciones: São Paulo (gru1). Cron diario `/api/latido`.
+- **Supabase**: organización "gemprovenezuela@gmail.com's" (plan Pro), proyecto `bcasqdjkilnefnqgfbnh` en São Paulo (sa-east-1). Es el mismo proyecto de siempre: la migración de cuentas se hizo por transferencia, sin cambiar URL ni claves.
+- **Dominio**: `gempro.com.ve` (producción) y `www.gempro.com.ve` (redirección 308 al apex). El DNS sigue en el cPanel de Interideas (`cpanel.gempro.com.ve`), que también aloja el correo: solo los registros A de `@` y `www` apuntan a Vercel (216.150.1.1); MX, SPF, DKIM y los subdominios de correo no se tocan. `gempro-web.vercel.app` sigue activo (el QR impreso apunta ahí).
 - **Costos**: Vercel Pro y Supabase Pro, un solo miembro/asiento en cada uno. En el equipo de Vercel está apagada la opción de añadir committers como asientos de pago; no agregar miembros al equipo Pro sin revisar el costo (20 USD/mes por asiento).
 
 ### Variables de entorno (ya cargadas en Vercel)
 
-, , , ,  (sin ella  responde 503), y opcionales ,  +  para los avisos por correo del formulario. Ver . Para volver a montar el proyecto desde cero: vercel.com → Add New Project → importar el repo → pegar estas variables → Deploy.
+`SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `ADMIN_PASSWORD`, `AUTH_SECRET`, `CRON_SECRET` (sin ella `/api/latido` responde 503), y opcionales `CORREO_AVISOS`, `GMAIL_USER` + `GMAIL_APP_PASSWORD` para los avisos por correo del formulario. Ver `.env.example`. Para volver a montar el proyecto desde cero: vercel.com → Add New Project → importar el repo → pegar estas variables → Deploy.
 
 ## Panel privado, portal de clientes, noticias y evento
 
