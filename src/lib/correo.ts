@@ -48,7 +48,7 @@ function html(c: Consulta): string {
     <tr><td align="center">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;">
         <tr><td style="background-color:#061426;padding:28px 32px;text-align:center;">
-          <img src="https://gempro-web.vercel.app/logo-correo.png" width="180" alt="GEMPRO" style="display:block;margin:0 auto;border:0;max-width:180px;height:auto;">
+          <img src="https://gempro.com.ve/logo-correo.png" width="180" alt="GEMPRO" style="display:block;margin:0 auto;border:0;max-width:180px;height:auto;">
         </td></tr>
         <tr><td style="height:4px;background-color:#3ddc84;line-height:4px;font-size:0;">&nbsp;</td></tr>
         <tr><td style="padding:32px 32px 4px 32px;">

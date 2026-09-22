@@ -76,19 +76,16 @@ y `SUPABASE_SERVICE_KEY` (Project Settings → API) a `.env` en local y a las va
 de Vercel. La `service_role` key solo se usa en rutas de servidor (`src/pages/api/*`, y en el
 panel/portal cuando existan) — nunca se expone al navegador.
 
-## Publicar en Vercel
+## Dónde vive en producción (desde el 21 sep 2026)
 
-1. vercel.com → Add New Project → importar `Diestorn03/GEMPRO-web`. Astro se detecta solo.
-2. Variables de entorno: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `ADMIN_PASSWORD`, `AUTH_SECRET`
-   y `CRON_SECRET` (Vercel la genera al guardarla; sin ella `/api/latido` responde 503 en vez de
-   aceptar cualquier visita anónima). Ver `.env.example`. Opcional: `CORREO_AVISOS` para desviar
-   los avisos del formulario a otro correo (por defecto van al de GEMPRO); y
-   `GMAIL_USER` + `GMAIL_APP_PASSWORD` (una cuenta de Gmail dedicada, no hace falta Google
-   Workspace) para que el formulario de contacto avise por correo — sin ellas, la consulta se
-   sigue guardando en Supabase, pero nadie en GEMPRO se entera salvo que entre a mirar la base
-   de datos.
-3. Deploy. Cada `git push` a `main` publica solo. Cuando GEMPRO tenga su dominio propio, se
-   agrega como dominio personalizado de este mismo proyecto — un solo lugar que apuntar.
+- **Vercel**: equipo "GEMPRO" (plan Pro), cuenta Google gemprovenezuela@gmail.com, proyecto . Cada  a  de  publica solo. Región de funciones: São Paulo (gru1). Cron diario .
+- **Supabase**: organización "gemprovenezuela@gmail.com's" (plan Pro), proyecto  en São Paulo (sa-east-1). Es el mismo proyecto de siempre: la migración de cuentas se hizo por transferencia, sin cambiar URL ni claves.
+- **Dominio**:  (producción) y  (redirección 308 al apex). El DNS sigue en el cPanel de Interideas (), que también aloja el correo: solo los registros A de  y  apuntan a Vercel (216.150.1.1); MX, SPF, DKIM y subdominios de correo no se tocan.  sigue activo (el QR impreso apunta ahí).
+- **Costos**: Vercel Pro y Supabase Pro, un solo miembro/asiento en cada uno. En el equipo de Vercel está apagada la opción de añadir committers como asientos de pago; no agregar miembros al equipo Pro sin revisar el costo (20 USD/mes por asiento).
+
+### Variables de entorno (ya cargadas en Vercel)
+
+, , , ,  (sin ella  responde 503), y opcionales ,  +  para los avisos por correo del formulario. Ver . Para volver a montar el proyecto desde cero: vercel.com → Add New Project → importar el repo → pegar estas variables → Deploy.
 
 ## Panel privado, portal de clientes, noticias y evento
 
